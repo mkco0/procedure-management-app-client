@@ -141,7 +141,7 @@ export function NewProcedurePage() {
               <dd className="font-mono text-lg text-navy-900">{success.fileNumber}</dd>
             </div>
             <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-ink-soft">Código de acceso (entregar al alumno)</dt>
+              <dt className="text-xs font-medium uppercase tracking-wide text-ink-soft">Código de acceso</dt>
               <dd className="flex items-center gap-2">
                 <span className="font-mono text-lg text-navy-900">{success.accessCode}</span>
                 <button
