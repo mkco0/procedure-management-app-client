@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@theme {
+  /* ---- Institutional palette ----
+     Warm paper canvas + navy "seal" blue + muted gold accent.
+     Deliberately NOT the generic cream+terracotta AI-default: navy carries
+     the institutional/government-portal weight this brief calls for. */
+  --color-canvas: #f3efe4;
+  --color-surface: #fffdf8;
+  --color-ink: #1e2a32;
+  --color-ink-soft: #4b5b64;
+  --color-line: #ded6c2;
+
+  --color-navy-950: #0e2036;
+  --color-navy-900: #12283f;
+  --color-navy-800: #1b3b5f;
+  --color-navy-700: #26507e;
+  --color-navy-600: #336aa3;
+  --color-navy-100: #e4ecf4;
+
+  --color-gold-700: #8f6a1f;
+  --color-gold-600: #b8862e;
+  --color-gold-100: #f3e7cd;
+
+  --color-status-partes: #6b6357;
+  --color-status-academica: #336aa3;
+  --color-status-direccion: #6a4fa0;
+  --color-status-entrega: #b8862e;
+  --color-status-completado: #3f6c4b;
+  --color-status-observado: #b8862e;
+  --color-status-rechazado: #a23b2e;
+
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+html {
+  font-family: var(--font-body);
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+body {
+  min-height: 100vh;
+}
+
+::selection {
+  background-color: var(--color-gold-100);
+}
+
+/* Dense "planilla" table look: hairlines, tight rows, tabular numerals */
+.sheet-table {
+  font-variant-numeric: tabular-nums;
+  border-collapse: collapse;
+}
+.sheet-table th,
+.sheet-table td {
+  border-bottom: 1px solid var(--color-line);
+}
+
+@media print {
+  @page {
+    size: landscape;
+    margin: 12mm;
+  }
+  .no-print {
+    display: none !important;
+  }
+  /* Only the marked printable region should render; everything else
+     (sidebar, nav, filters, buttons) collapses via .no-print above. */
+  body {
+    background: white !important;
+  }
+  .print-full-width {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
