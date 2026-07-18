@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api, ApiError } from '../../api/client';
 import { StatusStepper } from '../../components/StatusStepper';
-import { Button, Card, ErrorNotice, Field, Input, PageHeader, Select, Textarea } from '../../components/ui';
+import { Button, Card, ErrorNotice, Field, Input, PageHeader, SearchableSelect, Select, Textarea } from '../../components/ui';
 import { PROCEDURE_TYPE_OTHER_NAME, SHIFT_LABELS, STATUS_LABELS, type ProcedureDetail, type ProcedureStatus, type Shift } from '../../types/domain';
 import { formatDateTime } from '../../utils/format';
 import { useCatalogs } from '../../utils/useCatalogs';
@@ -191,17 +191,15 @@ export function ProcedureDetailPage() {
               </Select>
             </Field>
             <Field label="Tipo de trámite">
-              <Select
+              <SearchableSelect
                 value={editForm.procedureTypeId}
-                onChange={(e) => setEditForm({ ...editForm, procedureTypeId: e.target.value })}
+                onChange={(v) => setEditForm({ ...editForm, procedureTypeId: v })}
                 required
-              >
-                {catalogs.procedureTypes.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </Select>
+                options={catalogs.procedureTypes.map((t) => ({
+                  value: String(t.id),
+                  label: t.name,
+                }))}
+              />
             </Field>
             {editIsOtherType && (
               <Field label="Especifique el trámite">

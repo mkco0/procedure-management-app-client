@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../../api/client';
-import { Button, Card, ErrorNotice, Field, Input, PageHeader, Select, Textarea } from '../../components/ui';
+import { Button, Card, ErrorNotice, Field, Input, PageHeader, SearchableSelect, Select, Textarea } from '../../components/ui';
 import { FIELD_LIMITS, PROCEDURE_TYPE_OTHER_NAME, SHIFT_LABELS, type Shift } from '../../types/domain';
 import { formatCurrency, todayLimaISODate } from '../../utils/format';
 import { useCatalogs } from '../../utils/useCatalogs';
@@ -281,15 +281,15 @@ export function NewProcedurePage() {
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Tipo de trámite">
-              <Select value={draft.procedureTypeId} onChange={(e) => set('procedureTypeId', e.target.value)} required>
-                <option value="">Seleccione…</option>
-                {catalogs.procedureTypes.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                    {t.cost ? ` (${formatCurrency(t.cost)})` : ''}
-                  </option>
-                ))}
-              </Select>
+              <SearchableSelect
+                value={draft.procedureTypeId}
+                onChange={(v) => set('procedureTypeId', v)}
+                required
+                options={catalogs.procedureTypes.map((t) => ({
+                  value: String(t.id),
+                  label: t.cost ? `${t.name} (${formatCurrency(t.cost)})` : t.name,
+                }))}
+              />
             </Field>
             {isOtherProcedureType && (
               <Field label="Especifique el trámite">
