@@ -1,8 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api, ApiError } from '../../api/client';
 import { StatusStepper } from '../../components/StatusStepper';
-import { Button, Card, ErrorNotice, Field, Input, PageHeader, SearchableSelect, Select, Textarea } from '../../components/ui';
+import { Button, Card, CopyButton, ErrorNotice, Field, Input, PageHeader, SearchableSelect, Select, Textarea } from '../../components/ui';
 import { PROCEDURE_TYPE_OTHER_NAME, SHIFT_LABELS, STATUS_LABELS, type ProcedureDetail, type ProcedureStatus, type Shift } from '../../types/domain';
 import { formatDateTime } from '../../utils/format';
 import { useCatalogs } from '../../utils/useCatalogs';
@@ -146,7 +146,9 @@ export function ProcedureDetailPage() {
             </Button>
           </>
         }
-      />
+      >
+        <CopyButton text={procedure.fileNumber} />
+      </PageHeader>
 
       <Card className="p-6">
         <StatusStepper status={procedure.status} />
@@ -325,6 +327,9 @@ export function ProcedureDetailPage() {
             Datos del trámite
           </h2>
           <dl className="flex flex-col gap-2 text-sm">
+            <Row label="Documento de identidad" value={procedure.studentDni}>
+              <CopyButton text={procedure.studentDni} />
+            </Row>
             <Row label="Solicitante" value={procedure.applicantName} />
             <Row label="Programa" value={procedure.programCode} />
             <Row label="Turno" value={procedure.shift === 'Day' ? 'Diurno' : 'Nocturno'} />
@@ -362,11 +367,14 @@ export function ProcedureDetailPage() {
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value, children }: { label: string; value: string; children?: ReactNode }) {
   return (
-    <div className="flex justify-between gap-4 border-b border-line pb-2">
+    <div className="flex justify-between items-center gap-4 border-b border-line pb-2">
       <dt className="text-ink-soft">{label}</dt>
-      <dd className="text-right font-medium text-ink">{value}</dd>
+      <dd className="flex items-center font-medium text-ink">
+        {value}
+        {children}
+      </dd>   
     </div>
   );
 }

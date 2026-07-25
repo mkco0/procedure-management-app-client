@@ -179,6 +179,7 @@ export interface ProcedureDetail {
   procedureTypeName: string;
   procedureTypeOther: string | null;
   applicantName: string;
+  studentDni: string;
   programId: number;
   programCode: string;
   shift: Shift;

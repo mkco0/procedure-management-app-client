@@ -11,6 +11,8 @@ import {
   type TextareaHTMLAttributes,
 } from 'react';
 import { STATUS_LABELS, type ProcedureStatus } from '../types/domain';
+import { useCopyToClipboard } from 'usehooks-ts';
+import { Copy } from 'lucide-react';
 
 export function Button({
   variant = 'primary',
@@ -212,6 +214,26 @@ export function SearchableSelect({
   );
 }
 
+export function CopyButton({ text }: { text: string }) {
+  const [copiedText, copy] = useCopyToClipboard();
+  
+  const handleCopy = (text: string) => () => {
+  copy(text)
+    .then(() => {
+      console.log('Copied!', { text })
+    })
+    .catch(error => {
+      console.error('Failed to copy!', error)
+    })
+  }
+
+  return (
+    <button onClick={handleCopy(text)} className="inline-block ml-2 text-zinc-900 bg-olive-300/50 cursor-pointer p-2.25 rounded-md">
+      <Copy size={17} />
+    </button>
+  );
+}
+
 export function Checkbox(props: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   const { label, ...rest } = props;
   return (
@@ -226,11 +248,14 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
   return <div className={`rounded-sm border border-line bg-surface shadow-sm ${className}`}>{children}</div>;
 }
 
-export function PageHeader({ eyebrow, title, actions }: { eyebrow?: string; title: string; actions?: ReactNode }) {
+export function PageHeader({ eyebrow, title, actions, children }: { eyebrow?: string; title: string; actions?: ReactNode; children?: ReactNode }) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-line pb-4">
       <div>
-        {eyebrow && <p className="text-xs font-medium uppercase tracking-wider text-gold-700 mb-2">{eyebrow}</p>}
+        {eyebrow && <p className="text-xs font-medium uppercase tracking-wider text-gold-700 mb-2">
+          {eyebrow}
+          {children}
+        </p>}
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-navy-900">{title}</h1>
       </div>
       {actions && <div className="flex gap-2">{actions}</div>}
