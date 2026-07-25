@@ -33,6 +33,8 @@
   --font-display: "Source Serif 4", Georgia, serif;
   --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --breakpoint-xs: 426px;
 }
 
 html {

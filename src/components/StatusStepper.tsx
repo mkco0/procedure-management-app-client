@@ -12,7 +12,7 @@ export function StatusStepper({ status }: { status: ProcedureStatus }) {
 
   return (
     <div className="w-full">
-      <ol className="flex items-center">
+      <ol className="flex xs:flex-row flex-col items-center">
         {STATUS_ORDER.map((step, i) => {
           const done = !isDetoured && i < currentIndex;
           const active = !isDetoured && i === currentIndex;

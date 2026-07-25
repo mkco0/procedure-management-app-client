@@ -90,7 +90,7 @@ export function TramiteStatusPage() {
         <ol className="flex flex-col gap-3">
           {result.history.map((h, i) => (
             <li key={i} className="border-l-2 border-line pl-4">
-              <div className="flex items-center gap-2">
+              <div className="flex xs:flex-row flex-col items-center gap-2">
                 <StatusBadge status={h.status} />
                 {h.status !== 'MesaDePartes' && (
                   <p className="text-sm font-medium text-ink">{formatDateTime(h.changedAt)}</p>
