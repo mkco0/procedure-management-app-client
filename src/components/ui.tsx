@@ -215,7 +215,7 @@ export function SearchableSelect({
 }
 
 export function CopyButton({ text }: { text: string }) {
-  const [copiedText, copy] = useCopyToClipboard();
+  const [, copy] = useCopyToClipboard();
   
   const handleCopy = (text: string) => () => {
   copy(text)
