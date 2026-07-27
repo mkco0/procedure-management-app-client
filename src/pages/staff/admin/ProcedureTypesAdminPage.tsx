@@ -53,6 +53,7 @@ export function ProcedureTypesAdminPage() {
       <PageHeader
         eyebrow="Administración"
         title="Tipos de trámite"
+        count={loading ? undefined : items.length}
         actions={<Button onClick={() => setForm(emptyForm)}>AGREGAR TIPO DE TRÁMITE</Button>}
       />
 

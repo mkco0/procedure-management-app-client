@@ -248,7 +248,20 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
   return <div className={`rounded-sm border border-line bg-surface shadow-sm ${className}`}>{children}</div>;
 }
 
-export function PageHeader({ eyebrow, title, actions, children }: { eyebrow?: string; title: string; actions?: ReactNode; children?: ReactNode }) {
+export function PageHeader({
+  eyebrow,
+  title,
+  count,
+  actions,
+  children,
+}: {
+  eyebrow?: string;
+  title: string;
+  /** Total item count, shown as a badge next to the title. Omit while loading. */
+  count?: number;
+  actions?: ReactNode;
+  children?: ReactNode;
+}) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-line pb-4">
       <div>
@@ -256,7 +269,14 @@ export function PageHeader({ eyebrow, title, actions, children }: { eyebrow?: st
           {eyebrow}
           {children}
         </p>}
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-navy-900">{title}</h1>
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-navy-900">
+          {title}
+          {typeof count === 'number' && (
+            <span className="ml-3 inline-flex items-center justify-center rounded-full bg-navy-100 px-2.5 py-0.5 align-middle text-sm font-medium text-navy-800">
+              {count}
+            </span>
+          )}
+        </h1>
       </div>
       {actions && <div className="flex gap-2">{actions}</div>}
     </div>

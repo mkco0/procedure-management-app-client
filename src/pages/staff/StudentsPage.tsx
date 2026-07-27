@@ -96,6 +96,7 @@ export function StudentsPage() {
       <PageHeader
         eyebrow="Operación"
         title="Alumnos"
+        count={loading ? undefined : students.length}
         actions={<Button onClick={startCreate}>AGREGAR ALUMNO</Button>}
       />
 

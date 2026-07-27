@@ -48,7 +48,12 @@ export function ProgramsAdminPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="Administración" title="Programas" actions={<Button onClick={() => setForm(emptyForm)}>Nuevo programa</Button>} />
+      <PageHeader
+        eyebrow="Administración"
+        title="Programas"
+        count={loading ? undefined : items.length}
+        actions={<Button onClick={() => setForm(emptyForm)}>Nuevo programa</Button>}
+      />
 
       {form && (
         <Card className="mb-4 p-6">

@@ -94,7 +94,12 @@ export function DocumentTypeAdminPage({
 
   return (
     <div>
-      <PageHeader eyebrow={eyebrow} title={title} actions={<Button onClick={startCreate}>AGREGAR TIPO DE DOCUMENTO</Button>} />
+      <PageHeader
+        eyebrow={eyebrow}
+        title={title}
+        count={loading ? undefined : items.length}
+        actions={<Button onClick={startCreate}>AGREGAR TIPO DE DOCUMENTO</Button>}
+      />
 
       {form && (
         <Card className="mb-4 p-6">

@@ -61,7 +61,12 @@ export function UsersAdminPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="Administración" title="Usuarios" actions={<Button onClick={() => setForm(emptyForm)}>AGREGAR USUARIO</Button>} />
+      <PageHeader
+        eyebrow="Administración"
+        title="Usuarios"
+        count={loading ? undefined : users.length}
+        actions={<Button onClick={() => setForm(emptyForm)}>AGREGAR USUARIO</Button>}
+      />
 
       {form && (
         <Card className="mb-4 p-6">
