@@ -13,7 +13,9 @@ export type ProcedureStatus =
   | 'MesaDePartes'
   | 'SecretariaAcademica'
   | 'DireccionGeneral'
-  | 'SecretariaEntrega'
+  | 'EntregaSecretaria'
+  | 'EntregaMesaDePartes'
+  | 'EntregaDireccionGeneral'
   | 'Completado'
   | 'Observado'
   | 'Rechazado';
@@ -22,18 +24,46 @@ export const STATUS_LABELS: Record<ProcedureStatus, string> = {
   MesaDePartes: 'Mesa de partes',
   SecretariaAcademica: 'Secretaría Académica',
   DireccionGeneral: 'Dirección General',
-  SecretariaEntrega: 'Entrega en Secretaría Académica',
+  EntregaSecretaria: 'Entrega - Secretaría Académica',
+  EntregaMesaDePartes: 'Entrega - Mesa de Partes',
+  EntregaDireccionGeneral: 'Entrega - Dirección General',
   Completado: 'Completado',
   Observado: 'Observado',
   Rechazado: 'Rechazado',
 };
 
+/** The three parallel hand-over stages that all converge on Completado. */
+export const DELIVERY_STATUSES: ProcedureStatus[] = [
+  'EntregaSecretaria',
+  'EntregaMesaDePartes',
+  'EntregaDireccionGeneral',
+];
+
+/** Every status on the regular circuit, in canonical order (used for filters). */
 export const STATUS_ORDER: ProcedureStatus[] = [
   'MesaDePartes',
   'SecretariaAcademica',
   'DireccionGeneral',
-  'SecretariaEntrega',
+  ...DELIVERY_STATUSES,
   'Completado',
+];
+
+/**
+ * The circuit as five sequential steps for the stepper. The delivery step
+ * groups the three "Entrega - …" statuses, since they're parallel options at
+ * the same point of the flow rather than stages that follow one another.
+ */
+export interface WorkflowStep {
+  label: string;
+  statuses: ProcedureStatus[];
+}
+
+export const WORKFLOW_STEPS: WorkflowStep[] = [
+  { label: 'Mesa de partes', statuses: ['MesaDePartes'] },
+  { label: 'Secretaría Académica', statuses: ['SecretariaAcademica'] },
+  { label: 'Dirección General', statuses: ['DireccionGeneral'] },
+  { label: 'Entrega', statuses: DELIVERY_STATUSES },
+  { label: 'Completado', statuses: ['Completado'] },
 ];
 
 export const ROLE_LABELS: Record<UserRole, string> = {
@@ -90,6 +120,12 @@ export interface UserListItem {
   role: UserRole;
   isActive: boolean;
   createdAt: string;
+}
+
+/** Minimal active-staff entry for pickers (e.g. the "responsable" dropdown). */
+export interface UserOption {
+  id: number;
+  name: string;
 }
 
 // ---------------- Programs ----------------
@@ -158,6 +194,7 @@ export interface ProcedureListItem {
   programCode: string;
   shift: Shift;
   registeredByName: string;
+  personInChargeName: string | null;
   status: ProcedureStatus;
 }
 
@@ -183,6 +220,8 @@ export interface ProcedureDetail {
   programId: number;
   programCode: string;
   shift: Shift;
+  personInChargeId: number | null;
+  personInChargeName: string | null;
   status: ProcedureStatus;
   resumeStage: ProcedureStatus | null;
   comment: string | null;

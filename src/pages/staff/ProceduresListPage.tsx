@@ -17,6 +17,7 @@ function planillaRows(items: ProcedureListItem[]) {
     'Tipo trámite': p.procedureTypeName,
     'Programa/Turno': `${p.programCode}/${SHIFT_SHORT[p.shift]}`,
     'Registrado por': p.registeredByName,
+    Responsable: p.personInChargeName ?? '—',
     Estado: STATUS_LABELS[p.status],
   }));
 }
@@ -161,6 +162,7 @@ export function ProceduresListPage() {
                 <th className="px-3 py-2 font-medium">Tipo de trámite</th>
                 <th className="px-3 py-2 font-medium">Programa/Turno</th>
                 <th className="px-3 py-2 font-medium">Registrado por</th>
+                <th className="px-3 py-2 font-medium">Responsable</th>
                 <th className="px-3 py-2 font-medium">Estado</th>
               </tr>
             </thead>
@@ -182,6 +184,9 @@ export function ProceduresListPage() {
                   <td className="px-3 py-2">{p.procedureTypeName}</td>
                   <td className="px-3 py-2">{`${p.programCode}/${SHIFT_SHORT[p.shift]}`}</td>
                   <td className="px-3 py-2">{p.registeredByName}</td>
+                  <td className="px-3 py-2">
+                    {p.personInChargeName ?? <span className="text-ink-soft">—</span>}
+                  </td>
                   <td className="px-3 py-2">
                     <StatusBadge status={p.status} />
                   </td>

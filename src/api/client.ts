@@ -13,6 +13,7 @@ import type {
   Shift,
   StudentListItem,
   UserListItem,
+  UserOption,
   UserProfile,
 } from '../types/domain';
 
@@ -104,6 +105,9 @@ export const api = {
 
   users: {
     list: () => get<UserListItem[]>('/users'),
+    // Active staff only, readable by any signed-in user — /users itself is
+    // Admin-only, but Secretaría needs this to pick a responsable.
+    options: () => get<UserOption[]>('/users/options'),
     create: (data: { name: string; dni: string; password: string; role: string }) =>
       post<UserListItem>('/users', data),
     update: (id: number, data: { name: string; dni: string; role: string; isActive: boolean; password?: string | null }) =>

@@ -15,6 +15,7 @@ interface EditForm {
   applicantName: string;
   programId: string;
   shift: Shift;
+  personInChargeId: string;
   idDocumentType: string;
   idDocumentNumber: string;
   comment: string;
@@ -65,6 +66,7 @@ export function ProcedureDetailPage() {
       applicantName: procedure.applicantName,
       programId: String(procedure.programId),
       shift: procedure.shift,
+      personInChargeId: procedure.personInChargeId ? String(procedure.personInChargeId) : '',
       idDocumentType: '',
       idDocumentNumber: '',
       comment: procedure.comment ?? '',
@@ -89,6 +91,7 @@ export function ProcedureDetailPage() {
         applicantName: editForm.applicantName,
         programId: Number(editForm.programId),
         shift: editForm.shift,
+        personInChargeId: editForm.personInChargeId ? Number(editForm.personInChargeId) : null,
         idDocumentType: editForm.idDocumentType || null,
         idDocumentNumber: editForm.idDocumentNumber || null,
         comment: editForm.comment || null,
@@ -234,6 +237,19 @@ export function ProcedureDetailPage() {
                 />
               </Field>
             )}
+            <Field label="Responsable" hint="Personal a cargo del seguimiento.">
+              <Select
+                value={editForm.personInChargeId}
+                onChange={(e) => setEditForm({ ...editForm, personInChargeId: e.target.value })}
+              >
+                <option value="">Sin asignar</option>
+                {catalogs.staff.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
             <Field label="Reasignar identidad (opcional)" hint="Solo si necesita corregir el DNI del solicitante.">
               <div className="flex gap-2">
                 <Select
@@ -337,6 +353,7 @@ export function ProcedureDetailPage() {
               label="Documento presentado"
               value={procedure.documentType + (procedure.documentNumber ? ` (${procedure.documentNumber})` : '')}
             />
+            <Row label="Responsable" value={procedure.personInChargeName ?? 'Sin asignar'} />
             <Row label="Registrado el" value={formatDateTime(procedure.registeredAt)} />
             {procedure.comment && <Row label="Comentario" value={procedure.comment} />}
           </dl>
@@ -353,7 +370,7 @@ export function ProcedureDetailPage() {
                   {STATUS_LABELS[h.status]} · {h.changedByName}
                 </p>
                 {h.status === 'MesaDePartes' ? (
-                  <p className="text-xs text-ink-soft">Hora no registrada</p>
+                  <></>
                 ) : (
                   <p className="text-xs text-ink-soft">{formatDateTime(h.changedAt)}</p>
                 )}

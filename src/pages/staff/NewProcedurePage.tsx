@@ -18,6 +18,7 @@ interface Draft {
   applicantName: string;
   programId: string;
   shift: Shift;
+  personInChargeId: string;
   idDocumentType: string;
   idDocumentNumber: string;
   comment: string;
@@ -34,6 +35,7 @@ function emptyDraft(): Draft {
     applicantName: '',
     programId: '',
     shift: 'Day',
+    personInChargeId: '',
     idDocumentType: '',
     idDocumentNumber: '',
     comment: '',
@@ -108,6 +110,7 @@ export function NewProcedurePage() {
         applicantName: draft.applicantName,
         programId: Number(draft.programId),
         shift: draft.shift,
+        personInChargeId: draft.personInChargeId ? Number(draft.personInChargeId) : null,
         idDocumentType: draft.idDocumentType,
         idDocumentNumber: draft.idDocumentNumber,
         comment: draft.comment || null,
@@ -325,6 +328,19 @@ export function NewProcedurePage() {
                 />
               </Field>
             )}
+            <Field label="Responsable" hint="Personal a cargo del seguimiento (opcional)">
+              <Select
+                value={draft.personInChargeId}
+                onChange={(e) => set('personInChargeId', e.target.value)}
+              >
+                <option value="">Sin asignar</option>
+                {catalogs.staff.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
           </div>
           <div className="mt-4">
             <Field label="(OPCIONAL) - OBSERVACIONES">

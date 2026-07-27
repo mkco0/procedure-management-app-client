@@ -267,7 +267,11 @@ const STATUS_COLOR_VAR: Record<ProcedureStatus, string> = {
   MesaDePartes: 'var(--color-status-partes)',
   SecretariaAcademica: 'var(--color-status-academica)',
   DireccionGeneral: 'var(--color-status-direccion)',
-  SecretariaEntrega: 'var(--color-status-entrega)',
+  // The three delivery stages share one colour on purpose: they're the same
+  // point of the circuit, and the badge label already says which office.
+  EntregaSecretaria: 'var(--color-status-entrega)',
+  EntregaMesaDePartes: 'var(--color-status-entrega)',
+  EntregaDireccionGeneral: 'var(--color-status-entrega)',
   Completado: 'var(--color-status-completado)',
   Observado: 'var(--color-status-observado)',
   Rechazado: 'var(--color-status-rechazado)',

@@ -5,6 +5,7 @@ import type {
   PresentedDocumentTypeListItem,
   ProcedureTypeListItem,
   ProgramListItem,
+  UserOption,
 } from '../types/domain';
 
 export interface Catalogs {
@@ -12,16 +13,18 @@ export interface Catalogs {
   procedureTypes: ProcedureTypeListItem[];
   presentedDocumentTypes: PresentedDocumentTypeListItem[];
   identityDocumentTypes: IdentityDocumentTypeListItem[];
+  staff: UserOption[];
   loading: boolean;
 }
 
-/** Loads the four active catalogs a trámite form needs, once. */
+/** Loads the catalogs a trámite form needs, once. */
 export function useCatalogs(): Catalogs {
   const [state, setState] = useState<Catalogs>({
     programs: [],
     procedureTypes: [],
     presentedDocumentTypes: [],
     identityDocumentTypes: [],
+    staff: [],
     loading: true,
   });
 
@@ -33,9 +36,17 @@ export function useCatalogs(): Catalogs {
       api.procedureTypes.list(true),
       api.presentedDocumentTypes.list(true),
       api.identityDocumentTypes.list(true),
-    ]).then(([programs, procedureTypes, presentedDocumentTypes, identityDocumentTypes]) => {
+      api.users.options(),
+    ]).then(([programs, procedureTypes, presentedDocumentTypes, identityDocumentTypes, staff]) => {
       if (cancelled) return;
-      setState({ programs, procedureTypes, presentedDocumentTypes, identityDocumentTypes, loading: false });
+      setState({
+        programs,
+        procedureTypes,
+        presentedDocumentTypes,
+        identityDocumentTypes,
+        staff,
+        loading: false,
+      });
     });
 
     return () => {
