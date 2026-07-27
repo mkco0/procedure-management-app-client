@@ -52,7 +52,7 @@ export function StudentsPage() {
       dni: s.dni,
       name: s.name,
       programId: String(s.programId),
-      shift: s.shift,
+      shift: s.shift ?? 'Day',
       isActive: s.isActive,
     });
     setError(null);
@@ -204,7 +204,9 @@ export function StudentsPage() {
                   </td>
                   <td className="px-3 py-2">{s.name}</td>
                   <td className="px-3 py-2">{s.programCode}</td>
-                  <td className="px-3 py-2">{SHIFT_LABELS[s.shift]}</td>
+                  <td className="px-3 py-2">
+                    {s.shift ? SHIFT_LABELS[s.shift] : <span className="text-ink-soft">Sin turno</span>}
+                  </td>
                   <td className="px-3 py-2">{s.isActive ? 'Activo' : 'Inactivo'}</td>
                   <td className="px-3 py-2 text-right">
                     <button onClick={() => startEdit(s)} className="text-md font-medium text-navy-700 hover:underline">

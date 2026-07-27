@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../../api/client';
 import { Button, Card, ErrorNotice, Field, Input, PageHeader, SearchableSelect, Select, Textarea } from '../../components/ui';
-import { FIELD_LIMITS, PROCEDURE_TYPE_OTHER_NAME, SHIFT_LABELS, type Shift } from '../../types/domain';
+import { FIELD_LIMITS, PROCEDURE_TYPE_OTHER_NAME, SHIFT_LABELS, type Shift, type StudentListItem } from '../../types/domain';
 import { formatCurrency, todayLimaISODate } from '../../utils/format';
 import { useCatalogs } from '../../utils/useCatalogs';
 
@@ -50,6 +50,7 @@ export function NewProcedurePage() {
     return raw ? { ...emptyDraft(), ...JSON.parse(raw) } : emptyDraft();
   });
   const [studentStatus, setStudentStatus] = useState<'idle' | 'checking' | 'found' | 'new'>('idle');
+  const [foundStudent, setFoundStudent] = useState<StudentListItem | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ fileNumber: string; correlative: string; accessCode: string } | null>(null);
@@ -79,13 +80,16 @@ export function NewProcedurePage() {
     setStudentStatus('checking');
     try {
       const found = await api.students.lookup(value);
+      setFoundStudent(found);
       if (found) {
         setStudentStatus('found');
         setDraft((d) => ({
           ...d,
           applicantName: found.name,
           programId: String(found.programId),
-          shift: found.shift,
+          // Historical bulk-imported students may not have a recorded turno —
+          // keep whatever the operator already picked instead of clearing it.
+          shift: found.shift ?? d.shift,
         }));
       } else {
         setStudentStatus('new');
@@ -241,6 +245,11 @@ export function NewProcedurePage() {
           {studentStatus === 'found' && (
             <p className="mt-2 text-xs font-medium text-[color:var(--color-status-completado)]">
               Alumno encontrado — datos completados automáticamente.
+            </p>
+          )}
+          {studentStatus === 'found' && foundStudent && !foundStudent.shift && (
+            <p className="mt-2 text-xs text-gold-700">
+              Este alumno no tiene un turno registrado — verifique que el turno seleccionado sea correcto.
             </p>
           )}
           {studentStatus === 'new' && (

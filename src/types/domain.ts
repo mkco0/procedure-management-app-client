@@ -175,7 +175,9 @@ export interface StudentListItem {
   name: string;
   programId: number;
   programCode: string;
-  shift: Shift;
+  // Null only for historical students bulk-imported without a recorded
+  // turno; any new trámite registered for them fills it in.
+  shift: Shift | null;
   isActive: boolean;
 }
 
