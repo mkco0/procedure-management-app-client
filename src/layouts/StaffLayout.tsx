@@ -22,7 +22,7 @@ export function StaffLayout() {
 
   return (
     <div className="flex min-h-screen bg-canvas">
-      <aside className="no-print flex w-64 shrink-0 flex-col border-r border-line bg-surface px-3 py-5">
+      <aside className="no-print sticky top-0 flex h-screen w-64 shrink-0 flex-col overflow-y-auto border-r border-line bg-surface px-3 py-5">
         <div className="mb-6 px-3">
           <p className="font-[family-name:var(--font-display)] text-lg font-semibold leading-tight text-navy-900">
             IESTP Carlos Cueto Fernandini
