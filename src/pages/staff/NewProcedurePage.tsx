@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../../api/client';
 import { Button, Card, ErrorNotice, Field, Input, PageHeader, SearchableSelect, Select, Textarea } from '../../components/ui';
+import { StudentSearchInput } from '../../components/StudentSearchInput';
 import { FIELD_LIMITS, PROCEDURE_TYPE_OTHER_NAME, SHIFT_LABELS, type Shift, type StudentListItem } from '../../types/domain';
 import { formatCurrency, todayLimaISODate } from '../../utils/format';
 import { useCatalogs } from '../../utils/useCatalogs';
@@ -67,6 +68,7 @@ export function NewProcedurePage() {
     sessionStorage.removeItem(DRAFT_KEY);
     setDraft(emptyDraft());
     setStudentStatus('idle');
+    setFoundStudent(null);
     setError(null);
   }
 
@@ -97,6 +99,20 @@ export function NewProcedurePage() {
     } catch {
       setStudentStatus('idle');
     }
+  }
+
+  function pickStudent(s: StudentListItem) {
+    setFoundStudent(s);
+    setStudentStatus('found');
+    setDraft((d) => ({
+      ...d,
+      applicantName: s.name,
+      idDocumentType: s.idDocumentType,
+      idDocumentNumber: s.dni,
+      programId: String(s.programId),
+      // Imported students have no recorded turno — never clear the operator's pick.
+      shift: s.shift ?? d.shift,
+    }));
   }
 
   async function onSubmit(e: FormEvent) {
@@ -263,17 +279,26 @@ export function NewProcedurePage() {
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Nombres completos">
-              <Input value={draft.applicantName} onChange={(e) => set('applicantName', e.target.value)} required />
+              <StudentSearchInput
+                value={draft.applicantName}
+                onChange={(name) => set('applicantName', name)}
+                onSelect={pickStudent}
+                required
+              />
             </Field>
             <Field label="Programa">
-              <Select value={draft.programId} onChange={(e) => set('programId', e.target.value)} required>
-                <option value="">Seleccione…</option>
-                {catalogs.programs.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.code} — {p.name}
-                  </option>
-                ))}
-              </Select>
+              <SearchableSelect
+                value={draft.programId}
+                onChange={(v) => set('programId', v)}
+                required
+                options={catalogs.programs.flatMap((p) => [
+                  { value: String(p.id), label: `${p.code} — ${p.name}` },
+                  ...p.oldNames.map((oldName) => ({
+                    value: String(p.id),
+                    label: `${p.code} — ${oldName} (nombre anterior)`,
+                  })),
+                ])}
+              />
             </Field>
             <Field label="Turno">
               <Select value={draft.shift} onChange={(e) => set('shift', e.target.value as Shift)} required>

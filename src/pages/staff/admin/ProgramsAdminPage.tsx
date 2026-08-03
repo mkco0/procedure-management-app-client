@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api, ApiError } from '../../../api/client';
-import { Button, Card, Checkbox, ErrorNotice, Field, Input, PageHeader } from '../../../components/ui';
+import { Button, Card, Checkbox, ErrorNotice, Field, Input, PageHeader, Textarea } from '../../../components/ui';
 import type { ProgramListItem } from '../../../types/domain';
 
 interface FormState {
@@ -8,9 +8,17 @@ interface FormState {
   code: string;
   name: string;
   isActive: boolean;
+  oldNamesText: string;
 }
 
-const emptyForm: FormState = { id: null, code: '', name: '', isActive: true };
+const emptyForm: FormState = { id: null, code: '', name: '', isActive: true, oldNamesText: '' };
+
+function parseOldNames(text: string): string[] {
+  return text
+    .split('\n')
+    .map((n) => n.trim())
+    .filter((n) => n.length > 0);
+}
 
 export function ProgramsAdminPage() {
   const [items, setItems] = useState<ProgramListItem[]>([]);
@@ -32,10 +40,11 @@ export function ProgramsAdminPage() {
     setSaving(true);
     setError(null);
     try {
+      const oldNames = parseOldNames(form.oldNamesText);
       if (form.id === null) {
-        await api.programs.create({ code: form.code, name: form.name });
+        await api.programs.create({ code: form.code, name: form.name, oldNames });
       } else {
-        await api.programs.update(form.id, { name: form.name, isActive: form.isActive });
+        await api.programs.update(form.id, { name: form.name, isActive: form.isActive, oldNames });
       }
       setForm(null);
       load();
@@ -63,6 +72,14 @@ export function ProgramsAdminPage() {
             </Field>
             <Field label="Nombre">
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            </Field>
+            <Field label="Nombres antiguos (uno por línea)">
+              <Textarea
+                value={form.oldNamesText}
+                onChange={(e) => setForm({ ...form, oldNamesText: e.target.value })}
+                rows={3}
+                placeholder="Ej: Administración de Empresas"
+              />
             </Field>
             {form.id !== null && (
               <div className="flex items-end">
@@ -95,6 +112,7 @@ export function ProgramsAdminPage() {
               <tr className="bg-navy-100 text-xs uppercase tracking-wide text-navy-900">
                 <th className="px-3 py-2 font-medium">Código</th>
                 <th className="px-3 py-2 font-medium">Nombre</th>
+                <th className="px-3 py-2 font-medium">Nombres antiguos</th>
                 <th className="px-3 py-2 font-medium">Estado</th>
                 <th className="px-3 py-2 font-medium"></th>
               </tr>
@@ -104,11 +122,12 @@ export function ProgramsAdminPage() {
                 <tr key={p.id} className="hover:bg-navy-100/40">
                   <td className="px-3 py-2 font-mono">{p.code}</td>
                   <td className="px-3 py-2">{p.name}</td>
+                  <td className="px-3 py-2 text-ink-soft">{p.oldNames.join(', ')}</td>
                   <td className="px-3 py-2">{p.isActive ? 'Activo' : 'Inactivo'}</td>
                   <td className="px-3 py-2 text-right">
                     <button
                       onClick={() => {
-                        setForm({ id: p.id, code: p.code, name: p.name, isActive: p.isActive });
+                        setForm({ id: p.id, code: p.code, name: p.name, isActive: p.isActive, oldNamesText: p.oldNames.join('\n') });
                         setError(null);
                       }}
                       className="text-xs font-medium text-navy-700 hover:underline"

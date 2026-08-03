@@ -69,6 +69,9 @@ export function StaffLayout() {
           <p className="text-sm text-ink-soft mb-2">{user?.name}</p>
           <p className="text-sm text-ink-soft">ROL: {user ? ROLE_LABELS[user.role] : ''}</p>
           <p className="text-sm text-ink-soft">DNI: {user?.dni}</p>
+          <NavLink to="/app/cambiar-contrasena" className="mt-2 block text-xs font-medium text-navy-700 hover:underline">
+            Cambiar contraseña
+          </NavLink>
           <button onClick={logout} className="mt-2 text-xs font-medium text-red-500 hover:underline">
             Cerrar sesión
           </button>

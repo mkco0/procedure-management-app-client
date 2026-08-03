@@ -193,7 +193,9 @@ export function SearchableSelect({
             <li className="px-3 py-2 text-sm text-ink-soft">Sin resultados</li>
           ) : (
             filtered.map((o, i) => (
-              <li key={o.value} role="option" aria-selected={o.value === value}>
+              // Keyed by value+label, not value alone: callers may list the same
+              // value under multiple labels (e.g. a program's current and old names).
+              <li key={`${o.value}::${o.label}`} role="option" aria-selected={o.value === value}>
                 <button
                   type="button"
                   className={`block w-full px-3 py-2 text-left text-sm ${

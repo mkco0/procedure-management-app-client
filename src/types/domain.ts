@@ -135,6 +135,7 @@ export interface ProgramListItem {
   code: string;
   name: string;
   isActive: boolean;
+  oldNames: string[];
 }
 
 // ---------------- Procedure types ----------------

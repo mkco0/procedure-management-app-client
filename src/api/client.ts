@@ -101,6 +101,8 @@ export const api = {
     login: (dni: string, password: string) =>
       post<LoginResponse>('/auth/login', { dni, password }),
     me: () => get<UserProfile>('/auth/me'),
+    changePassword: (currentPassword: string, newPassword: string) =>
+      post<void>('/auth/change-password', { currentPassword, newPassword }),
   },
 
   users: {
@@ -116,8 +118,8 @@ export const api = {
 
   programs: {
     list: (onlyActive = false) => get<ProgramListItem[]>(`/programs${qs({ onlyActive })}`),
-    create: (data: { code: string; name: string }) => post<ProgramListItem>('/programs', data),
-    update: (id: number, data: { name: string; isActive: boolean }) =>
+    create: (data: { code: string; name: string; oldNames?: string[] }) => post<ProgramListItem>('/programs', data),
+    update: (id: number, data: { name: string; isActive: boolean; oldNames?: string[] }) =>
       put<ProgramListItem>(`/programs/${id}`, data),
   },
 
@@ -147,8 +149,8 @@ export const api = {
   },
 
   students: {
-    list: (search?: string, onlyActive = false) =>
-      get<StudentListItem[]>(`/students${qs({ search, onlyActive })}`),
+    list: (search?: string, onlyActive = false, limit?: number) =>
+      get<StudentListItem[]>(`/students${qs({ search, onlyActive, limit })}`),
     lookup: (dni: string) => get<StudentListItem | null>(`/students/lookup${qs({ dni })}`),
     create: (data: { idDocumentType: string; dni: string; name: string; programId: number; shift: Shift }) =>
       post<StudentListItem>('/students', data),
