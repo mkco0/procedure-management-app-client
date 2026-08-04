@@ -74,7 +74,7 @@ export function ChangePasswordPage() {
 
           {error && <ErrorNotice message={error} />}
           {success && (
-            <p className="text-sm font-medium text-[color:var(--color-status-completado)]">
+            <p className="text-sm font-medium text-[color:var(--color-estado-completado)]">
               Contraseña actualizada correctamente.
             </p>
           )}

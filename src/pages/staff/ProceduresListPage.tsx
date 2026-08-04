@@ -1,32 +1,56 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
-import { Button, Card, EmptyState, Input, Select, StatusBadge } from '../../components/ui';
-import { SHIFT_SHORT, STATUS_LABELS, STATUS_ORDER, type ProcedureListItem, type ProcedureStatus } from '../../types/domain';
+import { AreaBadge, Button, Card, EmptyState, EstadoBadge, Input, Select } from '../../components/ui';
+import {
+  AREA_LABELS,
+  AREA_STATUSES,
+  ESTADO_LABELS,
+  SHIFT_SHORT,
+  describeStatus,
+  type Estado,
+  type ProcedureListItem,
+  type ProcedureStatus,
+} from '../../types/domain';
 import { formatDate, todayLimaISODate } from '../../utils/format';
 
-const ALL_STATUSES: ProcedureStatus[] = [...STATUS_ORDER, 'Observado', 'Rechazado'];
+type FilterValue = { kind: 'status'; value: ProcedureStatus } | { kind: 'estado'; value: Estado } | null;
+
+function encodeFilter(f: FilterValue): string {
+  if (!f) return '';
+  return `${f.kind === 'status' ? 's' : 'e'}:${f.value}`;
+}
+
+function decodeFilter(raw: string): FilterValue {
+  if (!raw) return null;
+  const [kind, value] = raw.split(':');
+  return kind === 's' ? { kind: 'status', value: value as ProcedureStatus } : { kind: 'estado', value: value as Estado };
+}
 
 function planillaRows(items: ProcedureListItem[]) {
-  return items.map((p) => ({
-    Correlativo: `${p.correlativeNumber}-${p.correlativeYear}`,
-    'Doc. presentado': p.documentType + (p.documentNumber ? ` (${p.documentNumber})` : ''),
-    Fecha: formatDate(p.registeredAt),
-    Expediente: p.fileNumber,
-    Nombres: p.applicantName,
-    'Tipo trámite': p.procedureTypeName,
-    'Programa/Turno': `${p.programCode}/${SHIFT_SHORT[p.shift]}`,
-    'Registrado por': p.registeredByName,
-    Responsable: p.personInChargeName ?? '—',
-    Estado: STATUS_LABELS[p.status],
-  }));
+  return items.map((p) => {
+    const { area, estado } = describeStatus(p.status, p.resumeStage);
+    return {
+      Correlativo: `${p.correlativeNumber}-${p.correlativeYear}`,
+      'Doc. presentado': p.documentType + (p.documentNumber ? ` (${p.documentNumber})` : ''),
+      Fecha: formatDate(p.registeredAt),
+      Expediente: p.fileNumber,
+      Nombres: p.applicantName,
+      'Tipo trámite': p.procedureTypeName,
+      'Programa/Turno': `${p.programCode}/${SHIFT_SHORT[p.shift]}`,
+      'Registrado por': p.registeredByName,
+      Responsable: p.personInChargeName ?? '—',
+      Área: area ? AREA_LABELS[area] : '—',
+      Estado: ESTADO_LABELS[estado],
+    };
+  });
 }
 
 export function ProceduresListPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<ProcedureListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<ProcedureStatus | ''>('');
+  const [filter, setFilter] = useState<FilterValue>(null);
   const [search, setSearch] = useState('');
   const [year, setYear] = useState<number | ''>('');
   // Defaults to "today" (Lima) per operator request — Mesa de Partes mostly
@@ -36,17 +60,23 @@ export function ProceduresListPage() {
   useEffect(() => {
     setLoading(true);
     api.procedures
-      .list({ status: status || undefined, search: search || undefined, year: year || undefined, date: date || undefined })
+      .list({
+        status: filter?.kind === 'status' ? filter.value : undefined,
+        estado: filter?.kind === 'estado' ? filter.value : undefined,
+        search: search || undefined,
+        year: year || undefined,
+        date: date || undefined,
+      })
       .then(setItems)
       .finally(() => setLoading(false));
-  }, [status, search, year, date]);
+  }, [filter, search, year, date]);
 
   const years = useMemo(() => {
     const current = new Date().getFullYear();
     return Array.from({ length: 6 }, (_, i) => current - i);
   }, []);
 
-  const showingToday = date === todayLimaISODate() && !status && !search && !year;
+  const showingToday = date === todayLimaISODate() && !filter && !search && !year;
 
   function exportXlsx() {
     import('xlsx').then((XLSX) => {
@@ -108,13 +138,25 @@ export function ProceduresListPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
         />
-        <Select value={status} onChange={(e) => setStatus(e.target.value as ProcedureStatus | '')} className="max-w-52">
-          <option value="">TODOS LOS ESTADOS</option>
-          {ALL_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {STATUS_LABELS[s]}
-            </option>
+        <Select
+          value={encodeFilter(filter)}
+          onChange={(e) => setFilter(decodeFilter(e.target.value))}
+          className="max-w-64"
+        >
+          <option value="">TODOS</option>
+          {AREA_STATUSES.map(({ area, enTramite, enEntrega }) => (
+            <optgroup key={area} label={`Área — ${AREA_LABELS[area]}`}>
+              <option value={`s:${enTramite}`}>En trámite</option>
+              <option value={`s:${enEntrega}`}>En entrega</option>
+            </optgroup>
           ))}
+          <optgroup label="Estados">
+            <option value="e:EnTramite">En trámite (todas las áreas)</option>
+            <option value="e:EnEntrega">En entrega (todas las áreas)</option>
+            <option value="e:Completado">Completado</option>
+            <option value="e:Observado">Observado</option>
+            <option value="e:Rechazado">Rechazado</option>
+          </optgroup>
         </Select>
         <Select value={year} onChange={(e) => setYear(e.target.value ? Number(e.target.value) : '')} className="max-w-32">
           <option value="">TODOS LOS AÑOS</option>
@@ -128,12 +170,12 @@ export function ProceduresListPage() {
           <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-ink-soft">Fecha</span>
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="max-w-40" />
         </label>
-        {(date || status || search || year) && (
+        {(date || filter || search || year) && (
           <Button
             variant="secondary"
             onClick={() => {
               setDate('');
-              setStatus('');
+              setFilter(null);
               setSearch('');
               setYear('');
             }}
@@ -163,35 +205,42 @@ export function ProceduresListPage() {
                 <th className="px-3 py-2 font-medium">Programa/Turno</th>
                 <th className="px-3 py-2 font-medium">Registrado por</th>
                 <th className="px-3 py-2 font-medium">Responsable</th>
+                <th className="px-3 py-2 font-medium">Área</th>
                 <th className="px-3 py-2 font-medium">Estado</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((p) => (
-                <tr
-                  key={p.id}
-                  onClick={() => navigate(`/app/tramites/${p.id}`)}
-                  className="cursor-pointer hover:bg-navy-100/40"
-                >
-                  <td className="px-3 py-2 font-mono">{`${p.correlativeNumber}-${p.correlativeYear}`}</td>
-                  <td className="px-3 py-2">
-                    {p.documentType}
-                    {p.documentNumber ? ` (${p.documentNumber})` : ''}
-                  </td>
-                  <td className="px-3 py-2">{formatDate(p.registeredAt)}</td>
-                  <td className="px-3 py-2 font-mono text-navy-800">{p.fileNumber}</td>
-                  <td className="px-3 py-2">{p.applicantName}</td>
-                  <td className="px-3 py-2">{p.procedureTypeName}</td>
-                  <td className="px-3 py-2">{`${p.programCode}/${SHIFT_SHORT[p.shift]}`}</td>
-                  <td className="px-3 py-2">{p.registeredByName}</td>
-                  <td className="px-3 py-2">
-                    {p.personInChargeName ?? <span className="text-ink-soft">—</span>}
-                  </td>
-                  <td className="px-3 py-2">
-                    <StatusBadge status={p.status} />
-                  </td>
-                </tr>
-              ))}
+              {items.map((p) => {
+                const { area, estado } = describeStatus(p.status, p.resumeStage);
+                return (
+                  <tr
+                    key={p.id}
+                    onClick={() => navigate(`/app/tramites/${p.id}`)}
+                    className="cursor-pointer hover:bg-navy-100/40"
+                  >
+                    <td className="px-3 py-2 font-mono">{`${p.correlativeNumber}-${p.correlativeYear}`}</td>
+                    <td className="px-3 py-2">
+                      {p.documentType}
+                      {p.documentNumber ? ` (${p.documentNumber})` : ''}
+                    </td>
+                    <td className="px-3 py-2">{formatDate(p.registeredAt)}</td>
+                    <td className="px-3 py-2 font-mono text-navy-800">{p.fileNumber}</td>
+                    <td className="px-3 py-2">{p.applicantName}</td>
+                    <td className="px-3 py-2">{p.procedureTypeName}</td>
+                    <td className="px-3 py-2">{`${p.programCode}/${SHIFT_SHORT[p.shift]}`}</td>
+                    <td className="px-3 py-2">{p.registeredByName}</td>
+                    <td className="px-3 py-2">
+                      {p.personInChargeName ?? <span className="text-ink-soft">—</span>}
+                    </td>
+                    <td className="px-3 py-2">
+                      <AreaBadge area={area} />
+                    </td>
+                    <td className="px-3 py-2">
+                      <EstadoBadge estado={estado} />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

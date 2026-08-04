@@ -259,7 +259,7 @@ export function NewProcedurePage() {
           </div>
           {studentStatus === 'checking' && <p className="mt-2 text-xs text-ink-soft">Buscando alumno…</p>}
           {studentStatus === 'found' && (
-            <p className="mt-2 text-xs font-medium text-[color:var(--color-status-completado)]">
+            <p className="mt-2 text-xs font-medium text-[color:var(--color-estado-completado)]">
               Alumno encontrado — datos completados automáticamente.
             </p>
           )}

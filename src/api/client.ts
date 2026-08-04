@@ -1,6 +1,7 @@
 import type {
   CorrelativeYearItem,
   CreateProcedureResponse,
+  Estado,
   IdentityDocumentTypeListItem,
   LoginResponse,
   PresentedDocumentTypeListItem,
@@ -159,7 +160,7 @@ export const api = {
   },
 
   procedures: {
-    list: (filters: { status?: ProcedureStatus; search?: string; year?: number; date?: string }) =>
+    list: (filters: { status?: ProcedureStatus; estado?: Estado; search?: string; year?: number; date?: string }) =>
       get<ProcedureListItem[]>(`/procedures${qs(filters)}`),
     get: (id: number) => get<ProcedureDetail>(`/procedures/${id}`),
     create: (data: Record<string, unknown>) => post<CreateProcedureResponse>('/procedures', data),

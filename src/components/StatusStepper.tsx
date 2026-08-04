@@ -1,4 +1,4 @@
-import { STATUS_LABELS, WORKFLOW_STEPS, type ProcedureStatus } from '../types/domain';
+import { AREA_LABELS, STATUS_LABELS, WORKFLOW_STEPS, describeStatus, type ProcedureStatus } from '../types/domain';
 
 /**
  * Signature element: an institutional "circuit" stepper styled like a chain
@@ -10,9 +10,16 @@ import { STATUS_LABELS, WORKFLOW_STEPS, type ProcedureStatus } from '../types/do
  * it renders as a single stamp and, once reached, takes the label of the
  * office the expediente is actually being handed over at.
  */
-export function StatusStepper({ status }: { status: ProcedureStatus }) {
+export function StatusStepper({
+  status,
+  resumeStage,
+}: {
+  status: ProcedureStatus;
+  resumeStage?: ProcedureStatus | null;
+}) {
   const currentIndex = WORKFLOW_STEPS.findIndex((step) => step.statuses.includes(status));
-  const isDetoured = status === 'Observado' || status === 'Rechazado';
+  const { area, estado } = describeStatus(status, resumeStage);
+  const isDetoured = estado === 'Observado' || estado === 'Rechazado';
 
   return (
     <div className="w-full">
@@ -57,11 +64,13 @@ export function StatusStepper({ status }: { status: ProcedureStatus }) {
         <div
           className="mt-4 flex items-center gap-2 rounded-sm border px-3 py-2 text-sm font-medium"
           style={{
-            borderColor: status === 'Rechazado' ? 'var(--color-status-rechazado)' : 'var(--color-status-observado)',
-            color: status === 'Rechazado' ? 'var(--color-status-rechazado)' : 'var(--color-status-observado)',
+            borderColor: estado === 'Rechazado' ? 'var(--color-estado-rechazado)' : 'var(--color-estado-observado)',
+            color: estado === 'Rechazado' ? 'var(--color-estado-rechazado)' : 'var(--color-estado-observado)',
           }}
         >
-          Fuera del circuito regular: {STATUS_LABELS[status]}
+          {estado === 'Observado' && area
+            ? `Observado en ${AREA_LABELS[area]} — retomará ahí una vez resuelto.`
+            : `Fuera del circuito regular: ${STATUS_LABELS[status]}`}
         </div>
       )}
     </div>

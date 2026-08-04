@@ -10,7 +10,7 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react';
-import { STATUS_LABELS, type ProcedureStatus } from '../types/domain';
+import { AREA_LABELS, ESTADO_LABELS, type Area, type Estado } from '../types/domain';
 import { useCopyToClipboard } from 'usehooks-ts';
 import { Copy } from 'lucide-react';
 
@@ -285,29 +285,45 @@ export function PageHeader({
   );
 }
 
-const STATUS_COLOR_VAR: Record<ProcedureStatus, string> = {
-  MesaDePartes: 'var(--color-status-partes)',
-  SecretariaAcademica: 'var(--color-status-academica)',
-  DireccionGeneral: 'var(--color-status-direccion)',
-  // The three delivery stages share one colour on purpose: they're the same
-  // point of the circuit, and the badge label already says which office.
-  EntregaSecretaria: 'var(--color-status-entrega)',
-  EntregaMesaDePartes: 'var(--color-status-entrega)',
-  EntregaDireccionGeneral: 'var(--color-status-entrega)',
-  Completado: 'var(--color-status-completado)',
-  Observado: 'var(--color-status-observado)',
-  Rechazado: 'var(--color-status-rechazado)',
+const AREA_COLOR_VAR: Record<Area, string> = {
+  MesaDePartes: 'var(--color-area-partes)',
+  SecretariaAcademica: 'var(--color-area-academica)',
+  DireccionGeneral: 'var(--color-area-direccion)',
 };
 
-export function StatusBadge({ status }: { status: ProcedureStatus }) {
-  const color = STATUS_COLOR_VAR[status];
+/** Which office holds the expediente. `area` is null for statuses with no office (Completado/Rechazado, or Observado with no recorded resume stage). */
+export function AreaBadge({ area }: { area: Area | null }) {
+  if (!area) return <span className="text-sm text-ink-soft">—</span>;
+  const color = AREA_COLOR_VAR[area];
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium"
       style={{ borderColor: color, color }}
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
-      {STATUS_LABELS[status]}
+      {AREA_LABELS[area]}
+    </span>
+  );
+}
+
+const ESTADO_COLOR_VAR: Record<Estado, string> = {
+  EnTramite: 'var(--color-estado-tramite)',
+  EnEntrega: 'var(--color-estado-entrega)',
+  Completado: 'var(--color-estado-completado)',
+  Observado: 'var(--color-estado-observado)',
+  Rechazado: 'var(--color-estado-rechazado)',
+};
+
+/** What state the trámite is in, independent of which área holds it. */
+export function EstadoBadge({ estado }: { estado: Estado }) {
+  const color = ESTADO_COLOR_VAR[estado];
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium"
+      style={{ borderColor: color, color }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+      {ESTADO_LABELS[estado]}
     </span>
   );
 }

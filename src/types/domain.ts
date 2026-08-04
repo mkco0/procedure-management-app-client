@@ -66,6 +66,70 @@ export const WORKFLOW_STEPS: WorkflowStep[] = [
   { label: 'Completado', statuses: ['Completado'] },
 ];
 
+// ---------------- Área / Estado taxonomy ----------------
+//
+// A ProcedureStatus conflates two axes: which office physically holds the
+// expediente (área) and what state it's in (estado). This section resolves
+// any status onto that pair — the single source of truth the UI reads from
+// instead of re-deriving it status-by-status in each component.
+
+/** The three offices a trámite can physically be at. */
+export type Area = 'MesaDePartes' | 'SecretariaAcademica' | 'DireccionGeneral';
+
+export const AREA_LABELS: Record<Area, string> = {
+  MesaDePartes: 'Mesa de Partes',
+  SecretariaAcademica: 'Secretaría Académica',
+  DireccionGeneral: 'Dirección General',
+};
+
+/** The state a trámite is in, independent of which área holds it. */
+export type Estado = 'EnTramite' | 'EnEntrega' | 'Observado' | 'Completado' | 'Rechazado';
+
+export const ESTADO_LABELS: Record<Estado, string> = {
+  EnTramite: 'En trámite',
+  EnEntrega: 'En entrega',
+  Observado: 'Observado',
+  Completado: 'Completado',
+  Rechazado: 'Rechazado',
+};
+
+/** Each office's pair of statuses — while work is in progress, and once it's ready for hand-over there. */
+export const AREA_STATUSES: { area: Area; enTramite: ProcedureStatus; enEntrega: ProcedureStatus }[] = [
+  { area: 'MesaDePartes', enTramite: 'MesaDePartes', enEntrega: 'EntregaMesaDePartes' },
+  { area: 'SecretariaAcademica', enTramite: 'SecretariaAcademica', enEntrega: 'EntregaSecretaria' },
+  { area: 'DireccionGeneral', enTramite: 'DireccionGeneral', enEntrega: 'EntregaDireccionGeneral' },
+];
+
+const AREA_BY_STATUS: Partial<Record<ProcedureStatus, Area>> = {};
+const ESTADO_BY_STATUS = {} as Record<ProcedureStatus, Estado>;
+for (const { area, enTramite, enEntrega } of AREA_STATUSES) {
+  AREA_BY_STATUS[enTramite] = area;
+  AREA_BY_STATUS[enEntrega] = area;
+  ESTADO_BY_STATUS[enTramite] = 'EnTramite';
+  ESTADO_BY_STATUS[enEntrega] = 'EnEntrega';
+}
+ESTADO_BY_STATUS.Completado = 'Completado';
+ESTADO_BY_STATUS.Observado = 'Observado';
+ESTADO_BY_STATUS.Rechazado = 'Rechazado';
+
+/** True for the six statuses that name a physical office (in-progress or delivery). */
+export function isAreaStatus(status: ProcedureStatus): boolean {
+  return status in AREA_BY_STATUS;
+}
+
+/**
+ * Resolves a stored status into the (área, estado) pair the UI shows.
+ * `resumeStage` — required to know where an Observado trámite is held —
+ * comes from ProcedureDetail/ProcedureListItem/PublicProcedureResult.
+ */
+export function describeStatus(
+  status: ProcedureStatus,
+  resumeStage?: ProcedureStatus | null,
+): { area: Area | null; estado: Estado } {
+  const area = AREA_BY_STATUS[status] ?? (resumeStage ? (AREA_BY_STATUS[resumeStage] ?? null) : null);
+  return { area, estado: ESTADO_BY_STATUS[status] };
+}
+
 export const ROLE_LABELS: Record<UserRole, string> = {
   Admin: 'Administrador',
   Secretary: 'Secretaría',
@@ -199,6 +263,7 @@ export interface ProcedureListItem {
   registeredByName: string;
   personInChargeName: string | null;
   status: ProcedureStatus;
+  resumeStage: ProcedureStatus | null;
 }
 
 export interface ProcedureHistoryItem {
@@ -260,6 +325,7 @@ export interface PublicProcedureResult {
   procedureTypeName: string;
   programCode: string;
   status: ProcedureStatus;
+  resumeStage: ProcedureStatus | null;
   registeredAt: string;
   history: PublicHistoryItem[];
 }

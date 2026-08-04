@@ -2,8 +2,30 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api, ApiError } from '../../api/client';
 import { StatusStepper } from '../../components/StatusStepper';
-import { Button, Card, CopyButton, ErrorNotice, Field, Input, PageHeader, SearchableSelect, Select, Textarea } from '../../components/ui';
-import { PROCEDURE_TYPE_OTHER_NAME, SHIFT_LABELS, STATUS_LABELS, type ProcedureDetail, type ProcedureStatus, type Shift } from '../../types/domain';
+import {
+  AreaBadge,
+  Button,
+  Card,
+  CopyButton,
+  ErrorNotice,
+  EstadoBadge,
+  Field,
+  Input,
+  PageHeader,
+  SearchableSelect,
+  Select,
+  Textarea,
+} from '../../components/ui';
+import {
+  PROCEDURE_TYPE_OTHER_NAME,
+  SHIFT_LABELS,
+  STATUS_LABELS,
+  describeStatus,
+  isAreaStatus,
+  type ProcedureDetail,
+  type ProcedureStatus,
+  type Shift,
+} from '../../types/domain';
 import { formatDateTime } from '../../utils/format';
 import { useCatalogs } from '../../utils/useCatalogs';
 
@@ -154,7 +176,7 @@ export function ProcedureDetailPage() {
       </PageHeader>
 
       <Card className="p-6">
-        <StatusStepper status={procedure.status} />
+        <StatusStepper status={procedure.status} resumeStage={procedure.resumeStage} />
       </Card>
 
       {editing && editForm && (
@@ -303,14 +325,27 @@ export function ProcedureDetailPage() {
             Avanzar trámite
           </h2>
           <div className="flex flex-wrap items-end gap-3">
-            <Field label="Nuevo estado">
+            <Field label="Siguiente paso">
               <Select value={nextStatus} onChange={(e) => setNextStatus(e.target.value as ProcedureStatus | '')}>
                 <option value="">Seleccione…</option>
-                {procedure.allowedNextStatuses.map((s) => (
-                  <option key={s} value={s}>
-                    {STATUS_LABELS[s]}
-                  </option>
-                ))}
+                {procedure.allowedNextStatuses.some(isAreaStatus) && (
+                  <optgroup label="Mover a otra área">
+                    {procedure.allowedNextStatuses.filter(isAreaStatus).map((s) => (
+                      <option key={s} value={s}>
+                        {STATUS_LABELS[s]}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {procedure.allowedNextStatuses.some((s) => !isAreaStatus(s)) && (
+                  <optgroup label="Cambiar estado">
+                    {procedure.allowedNextStatuses.filter((s) => !isAreaStatus(s)).map((s) => (
+                      <option key={s} value={s}>
+                        {STATUS_LABELS[s]}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </Select>
             </Field>
             <Button onClick={submitStatusChange} disabled={!nextStatus || changingStatus}>
@@ -343,6 +378,18 @@ export function ProcedureDetailPage() {
             Datos del trámite
           </h2>
           <dl className="flex flex-col gap-2 text-sm">
+            <div className="flex justify-between items-center gap-4 border-b border-line pb-2">
+              <dt className="text-ink-soft">Área</dt>
+              <dd>
+                <AreaBadge area={describeStatus(procedure.status, procedure.resumeStage).area} />
+              </dd>
+            </div>
+            <div className="flex justify-between items-center gap-4 border-b border-line pb-2">
+              <dt className="text-ink-soft">Estado</dt>
+              <dd>
+                <EstadoBadge estado={describeStatus(procedure.status, procedure.resumeStage).estado} />
+              </dd>
+            </div>
             <Row label="Documento de identidad" value={procedure.studentDni}>
               <CopyButton text={procedure.studentDni} />
             </Row>

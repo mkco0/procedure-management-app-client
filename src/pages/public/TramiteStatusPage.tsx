@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../../api/client';
 import { StatusStepper } from '../../components/StatusStepper';
-import { Button, Card, EmptyState, ErrorNotice, StatusBadge } from '../../components/ui';
-import type { PublicProcedureResult } from '../../types/domain';
+import { AreaBadge, Button, Card, EmptyState, ErrorNotice, EstadoBadge } from '../../components/ui';
+import { describeStatus, type PublicProcedureResult } from '../../types/domain';
 import { formatDateTime } from '../../utils/format';
 
 const CREDENTIALS_KEY = 'tramite_lookup_credentials';
@@ -78,9 +78,13 @@ export function TramiteStatusPage() {
         Carrera: {result.programCode} <br/>
         Registrado en: {formatDateTime(result.registeredAt)}
       </p>
+      <div className="mt-3 flex items-center gap-2">
+        <AreaBadge area={describeStatus(result.status, result.resumeStage).area} />
+        <EstadoBadge estado={describeStatus(result.status, result.resumeStage).estado} />
+      </div>
 
       <Card className="mt-6 p-6">
-        <StatusStepper status={result.status} />
+        <StatusStepper status={result.status} resumeStage={result.resumeStage} />
       </Card>
 
       <Card className="mt-6 p-6">
@@ -88,17 +92,21 @@ export function TramiteStatusPage() {
           Historial
         </h2>
         <ol className="flex flex-col gap-3">
-          {result.history.map((h, i) => (
-            <li key={i} className="border-l-2 border-line pl-4">
-              <div className="flex xs:flex-row flex-col items-center gap-2">
-                <StatusBadge status={h.status} />
-                {h.status !== 'MesaDePartes' && (
-                  <p className="text-sm font-medium text-ink">{formatDateTime(h.changedAt)}</p>
-                )}
-              </div>
-              {h.comment && <p className="mt-1 text-sm text-ink-soft">{h.comment}</p>}
-            </li>
-          ))}
+          {result.history.map((h, i) => {
+            const { area, estado } = describeStatus(h.status);
+            return (
+              <li key={i} className="border-l-2 border-line pl-4">
+                <div className="flex xs:flex-row flex-col items-center gap-2">
+                  <AreaBadge area={area} />
+                  <EstadoBadge estado={estado} />
+                  {h.status !== 'MesaDePartes' && (
+                    <p className="text-sm font-medium text-ink">{formatDateTime(h.changedAt)}</p>
+                  )}
+                </div>
+                {h.comment && <p className="mt-1 text-sm text-ink-soft">{h.comment}</p>}
+              </li>
+            );
+          })}
         </ol>
       </Card>
 

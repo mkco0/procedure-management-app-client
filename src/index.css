@@ -22,12 +22,19 @@
   --color-gold-600: #b8862e;
   --color-gold-100: #f3e7cd;
 
-  --color-status-partes: #6b6357;
-  --color-status-academica: #336aa3;
-  --color-status-direccion: #6a4fa0;
-  --color-status-entrega: #b8862e;
-  --color-status-completado: #3f6c4b;
-  --color-status-observado: #b8862e;
+  /* Área — which office holds the expediente. */
+  --color-area-partes: #6b6357;
+  --color-area-academica: #336aa3;
+  --color-area-direccion: #6a4fa0;
+
+  /* Estado — what state it's in, independent of área. */
+  --color-estado-tramite: #26507e;
+  --color-estado-entrega: #b8862e;
+  --color-estado-completado: #3f6c4b;
+  --color-estado-observado: #c17817;
+  --color-estado-rechazado: #a23b2e;
+
+  /* Kept for non-status uses (danger button/error notice) — same red as estado-rechazado. */
   --color-status-rechazado: #a23b2e;
 
   --font-display: "Source Serif 4", Georgia, serif;
