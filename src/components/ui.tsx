@@ -10,7 +10,7 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react';
-import { AREA_LABELS, ESTADO_LABELS, type Area, type Estado } from '../types/domain';
+import { ESTADO_LABELS, areaLabel, type Area, type Estado } from '../types/domain';
 import { useCopyToClipboard } from 'usehooks-ts';
 import { Copy } from 'lucide-react';
 
@@ -289,10 +289,18 @@ const AREA_COLOR_VAR: Record<Area, string> = {
   MesaDePartes: 'var(--color-area-partes)',
   SecretariaAcademica: 'var(--color-area-academica)',
   DireccionGeneral: 'var(--color-area-direccion)',
+  AreaAdministracion: 'var(--color-area-administracion)',
+  UnidadAcademica: 'var(--color-area-unidad-academica)',
+  AreaPrograma: 'var(--color-area-programa)',
 };
 
-/** Which office holds the expediente. `area` is null for statuses with no office (Completado/Rechazado, or Observado with no recorded resume stage). */
-export function AreaBadge({ area }: { area: Area | null }) {
+/**
+ * Which office holds the expediente. `area` is null for statuses with no
+ * office (Completado/Rechazado, or Observado with no recorded resume
+ * stage). Pass `programName` to resolve an `AreaPrograma` area to the
+ * trámite's own program instead of the generic "Área del programa" label.
+ */
+export function AreaBadge({ area, programName }: { area: Area | null; programName?: string | null }) {
   if (!area) return <span className="text-sm text-ink-soft">—</span>;
   const color = AREA_COLOR_VAR[area];
   return (
@@ -301,7 +309,7 @@ export function AreaBadge({ area }: { area: Area | null }) {
       style={{ borderColor: color, color }}
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
-      {AREA_LABELS[area]}
+      {areaLabel(area, programName)}
     </span>
   );
 }

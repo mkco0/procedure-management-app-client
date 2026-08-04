@@ -26,6 +26,10 @@
   --color-area-partes: #6b6357;
   --color-area-academica: #336aa3;
   --color-area-direccion: #6a4fa0;
+  /* Occasional derivation áreas, reachable from Secretaría Académica. */
+  --color-area-administracion: #1f7a6b;
+  --color-area-unidad-academica: #7a4a6b;
+  --color-area-programa: #46586b;
 
   /* Estado — what state it's in, independent of área. */
   --color-estado-tramite: #26507e;

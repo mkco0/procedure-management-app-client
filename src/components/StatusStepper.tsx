@@ -1,4 +1,4 @@
-import { AREA_LABELS, STATUS_LABELS, WORKFLOW_STEPS, describeStatus, type ProcedureStatus } from '../types/domain';
+import { STATUS_LABELS, WORKFLOW_STEPS, areaLabel, describeStatus, type ProcedureStatus } from '../types/domain';
 
 /**
  * Signature element: an institutional "circuit" stepper styled like a chain
@@ -13,9 +13,11 @@ import { AREA_LABELS, STATUS_LABELS, WORKFLOW_STEPS, describeStatus, type Proced
 export function StatusStepper({
   status,
   resumeStage,
+  programName,
 }: {
   status: ProcedureStatus;
   resumeStage?: ProcedureStatus | null;
+  programName?: string | null;
 }) {
   const currentIndex = WORKFLOW_STEPS.findIndex((step) => step.statuses.includes(status));
   const { area, estado } = describeStatus(status, resumeStage);
@@ -29,7 +31,12 @@ export function StatusStepper({
           const active = !isDetoured && i === currentIndex;
           // A grouped step names the specific office only while it's the
           // current one; otherwise it keeps its generic label.
-          const label = active && step.statuses.length > 1 ? STATUS_LABELS[status] : step.label;
+          const label =
+            active && step.statuses.length > 1
+              ? status === 'AreaPrograma'
+                ? areaLabel('AreaPrograma', programName)
+                : STATUS_LABELS[status]
+              : step.label;
           return (
             <li key={step.label} className="flex flex-1 items-center last:flex-none">
               <div className="flex flex-col items-center gap-1.5">
@@ -69,7 +76,7 @@ export function StatusStepper({
           }}
         >
           {estado === 'Observado' && area
-            ? `Observado en ${AREA_LABELS[area]} — retomará ahí una vez resuelto.`
+            ? `Observado en ${areaLabel(area, programName)} — retomará ahí una vez resuelto.`
             : `Fuera del circuito regular: ${STATUS_LABELS[status]}`}
         </div>
       )}

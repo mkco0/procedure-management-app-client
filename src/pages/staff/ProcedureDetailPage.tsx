@@ -20,6 +20,7 @@ import {
   PROCEDURE_TYPE_OTHER_NAME,
   SHIFT_LABELS,
   STATUS_LABELS,
+  areaLabel,
   describeStatus,
   isAreaStatus,
   type ProcedureDetail,
@@ -60,13 +61,20 @@ export function ProcedureDetailPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
+  // An observed trámite defaults to resuming the área it was raised from —
+  // the server lists it first in allowedNextStatuses — but that's just the
+  // default; any other option remains selectable.
+  function defaultNextStatus(p: ProcedureDetail): ProcedureStatus | '' {
+    return p.status === 'Observado' && p.allowedNextStatuses.length > 0 ? p.allowedNextStatuses[0] : '';
+  }
+
   async function load() {
     if (!id) return;
     setLoading(true);
     try {
       const data = await api.procedures.get(Number(id));
       setProcedure(data);
-      setNextStatus('');
+      setNextStatus(defaultNextStatus(data));
       setStatusComment('');
     } finally {
       setLoading(false);
@@ -134,7 +142,7 @@ export function ProcedureDetailPage() {
     try {
       const updated = await api.procedures.changeStatus(procedure.id, nextStatus, statusComment || undefined);
       setProcedure(updated);
-      setNextStatus('');
+      setNextStatus(defaultNextStatus(updated));
       setStatusComment('');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo actualizar el estado.');
@@ -158,6 +166,12 @@ export function ProcedureDetailPage() {
   const editSelectedType = catalogs.procedureTypes.find((t) => String(t.id) === editForm?.procedureTypeId);
   const editIsOtherType = editSelectedType?.name === PROCEDURE_TYPE_OTHER_NAME;
 
+  // AreaPrograma resolves to this trámite's own program; every other status
+  // keeps its fixed label.
+  function statusLabel(s: ProcedureStatus): string {
+    return s === 'AreaPrograma' ? areaLabel('AreaPrograma', procedure!.programName) : STATUS_LABELS[s];
+  }
+
   return (
     <div>
       <PageHeader
@@ -176,7 +190,7 @@ export function ProcedureDetailPage() {
       </PageHeader>
 
       <Card className="p-6">
-        <StatusStepper status={procedure.status} resumeStage={procedure.resumeStage} />
+        <StatusStepper status={procedure.status} resumeStage={procedure.resumeStage} programName={procedure.programName} />
       </Card>
 
       {editing && editForm && (
@@ -332,7 +346,7 @@ export function ProcedureDetailPage() {
                   <optgroup label="Mover a otra área">
                     {procedure.allowedNextStatuses.filter(isAreaStatus).map((s) => (
                       <option key={s} value={s}>
-                        {STATUS_LABELS[s]}
+                        {statusLabel(s)}
                       </option>
                     ))}
                   </optgroup>
@@ -341,7 +355,7 @@ export function ProcedureDetailPage() {
                   <optgroup label="Cambiar estado">
                     {procedure.allowedNextStatuses.filter((s) => !isAreaStatus(s)).map((s) => (
                       <option key={s} value={s}>
-                        {STATUS_LABELS[s]}
+                        {statusLabel(s)}
                       </option>
                     ))}
                   </optgroup>
@@ -381,7 +395,10 @@ export function ProcedureDetailPage() {
             <div className="flex justify-between items-center gap-4 border-b border-line pb-2">
               <dt className="text-ink-soft">Área</dt>
               <dd>
-                <AreaBadge area={describeStatus(procedure.status, procedure.resumeStage).area} />
+                <AreaBadge
+                  area={describeStatus(procedure.status, procedure.resumeStage).area}
+                  programName={procedure.programName}
+                />
               </dd>
             </div>
             <div className="flex justify-between items-center gap-4 border-b border-line pb-2">
@@ -414,7 +431,7 @@ export function ProcedureDetailPage() {
             {procedure.history.map((h, i) => (
               <li key={i} className="border-l-2 border-line pl-3">
                 <p className="text-sm font-medium text-ink">
-                  {STATUS_LABELS[h.status]} · {h.changedByName}
+                  {statusLabel(h.status)} · {h.changedByName}
                 </p>
                 {h.status === 'MesaDePartes' ? (
                   <></>

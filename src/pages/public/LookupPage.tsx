@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BookOpen } from 'lucide-react';
 import { api, ApiError } from '../../api/client';
 import { Button, Card, ErrorNotice, Field, Input } from '../../components/ui';
 
@@ -59,6 +60,27 @@ export function LookupPage() {
             {loading ? 'Consultando…' : 'Consultar estado'}
           </Button>
         </form>
+      </Card>
+
+      <Card className="mt-4 max-w-md p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-navy-100 text-navy-800">
+            <BookOpen className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="font-[family-name:var(--font-display)] text-base font-semibold text-navy-900">
+              Manual del estudiante
+            </h2>
+            <p className="mt-1 text-sm text-ink-soft">Guía rápida para consultar el estado de tu trámite.</p>
+            <a
+              href="/manual-estudiante.pdf"
+              download
+              className="mt-3 inline-flex items-center justify-center rounded-sm bg-navy-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-navy-700"
+            >
+              Descargar PDF
+            </a>
+          </div>
+        </div>
       </Card>
     </div>
   );

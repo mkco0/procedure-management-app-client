@@ -5,8 +5,10 @@ import { AreaBadge, Button, Card, EmptyState, EstadoBadge, Input, Select } from 
 import {
   AREA_LABELS,
   AREA_STATUSES,
+  DERIVATION_AREAS,
   ESTADO_LABELS,
   SHIFT_SHORT,
+  areaLabel,
   describeStatus,
   type Estado,
   type ProcedureListItem,
@@ -40,7 +42,7 @@ function planillaRows(items: ProcedureListItem[]) {
       'Programa/Turno': `${p.programCode}/${SHIFT_SHORT[p.shift]}`,
       'Registrado por': p.registeredByName,
       Responsable: p.personInChargeName ?? '—',
-      Área: area ? AREA_LABELS[area] : '—',
+      Área: area ? areaLabel(area, p.programName) : '—',
       Estado: ESTADO_LABELS[estado],
     };
   });
@@ -150,6 +152,13 @@ export function ProceduresListPage() {
               <option value={`s:${enEntrega}`}>En entrega</option>
             </optgroup>
           ))}
+          <optgroup label="Otras áreas">
+            {DERIVATION_AREAS.map(({ area, status }) => (
+              <option key={status} value={`s:${status}`}>
+                {AREA_LABELS[area]}
+              </option>
+            ))}
+          </optgroup>
           <optgroup label="Estados">
             <option value="e:EnTramite">En trámite (todas las áreas)</option>
             <option value="e:EnEntrega">En entrega (todas las áreas)</option>
@@ -233,7 +242,7 @@ export function ProceduresListPage() {
                       {p.personInChargeName ?? <span className="text-ink-soft">—</span>}
                     </td>
                     <td className="px-3 py-2">
-                      <AreaBadge area={area} />
+                      <AreaBadge area={area} programName={p.programName} />
                     </td>
                     <td className="px-3 py-2">
                       <EstadoBadge estado={estado} />

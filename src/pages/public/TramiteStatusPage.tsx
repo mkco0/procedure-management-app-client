@@ -79,12 +79,12 @@ export function TramiteStatusPage() {
         Registrado en: {formatDateTime(result.registeredAt)}
       </p>
       <div className="mt-3 flex items-center gap-2">
-        <AreaBadge area={describeStatus(result.status, result.resumeStage).area} />
+        <AreaBadge area={describeStatus(result.status, result.resumeStage).area} programName={result.programName} />
         <EstadoBadge estado={describeStatus(result.status, result.resumeStage).estado} />
       </div>
 
       <Card className="mt-6 p-6">
-        <StatusStepper status={result.status} resumeStage={result.resumeStage} />
+        <StatusStepper status={result.status} resumeStage={result.resumeStage} programName={result.programName} />
       </Card>
 
       <Card className="mt-6 p-6">
@@ -97,7 +97,7 @@ export function TramiteStatusPage() {
             return (
               <li key={i} className="border-l-2 border-line pl-4">
                 <div className="flex xs:flex-row flex-col items-center gap-2">
-                  <AreaBadge area={area} />
+                  <AreaBadge area={area} programName={result.programName} />
                   <EstadoBadge estado={estado} />
                   {h.status !== 'MesaDePartes' && (
                     <p className="text-sm font-medium text-ink">{formatDateTime(h.changedAt)}</p>

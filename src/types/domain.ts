@@ -13,6 +13,9 @@ export type ProcedureStatus =
   | 'MesaDePartes'
   | 'SecretariaAcademica'
   | 'DireccionGeneral'
+  | 'AreaAdministracion'
+  | 'UnidadAcademica'
+  | 'AreaPrograma'
   | 'EntregaSecretaria'
   | 'EntregaMesaDePartes'
   | 'EntregaDireccionGeneral'
@@ -24,6 +27,9 @@ export const STATUS_LABELS: Record<ProcedureStatus, string> = {
   MesaDePartes: 'Mesa de partes',
   SecretariaAcademica: 'Secretaría Académica',
   DireccionGeneral: 'Dirección General',
+  AreaAdministracion: 'Área de Administración',
+  UnidadAcademica: 'Unidad Académica',
+  AreaPrograma: 'Área del programa',
   EntregaSecretaria: 'Entrega - Secretaría Académica',
   EntregaMesaDePartes: 'Entrega - Mesa de Partes',
   EntregaDireccionGeneral: 'Entrega - Dirección General',
@@ -60,7 +66,12 @@ export interface WorkflowStep {
 
 export const WORKFLOW_STEPS: WorkflowStep[] = [
   { label: 'Mesa de partes', statuses: ['MesaDePartes'] },
-  { label: 'Secretaría Académica', statuses: ['SecretariaAcademica'] },
+  // Groups the three occasional derivation áreas with Secretaría Académica —
+  // they're all reached from there and aren't a separate circuit stage.
+  {
+    label: 'Secretaría Académica',
+    statuses: ['SecretariaAcademica', 'AreaAdministracion', 'UnidadAcademica', 'AreaPrograma'],
+  },
   { label: 'Dirección General', statuses: ['DireccionGeneral'] },
   { label: 'Entrega', statuses: DELIVERY_STATUSES },
   { label: 'Completado', statuses: ['Completado'] },
@@ -73,14 +84,38 @@ export const WORKFLOW_STEPS: WorkflowStep[] = [
 // any status onto that pair — the single source of truth the UI reads from
 // instead of re-deriving it status-by-status in each component.
 
-/** The three offices a trámite can physically be at. */
-export type Area = 'MesaDePartes' | 'SecretariaAcademica' | 'DireccionGeneral';
+/**
+ * Every área a trámite can physically be at: the three offices on the
+ * regular circuit, plus three occasional derivation áreas reachable from
+ * Secretaría Académica when needed.
+ */
+export type Area =
+  | 'MesaDePartes'
+  | 'SecretariaAcademica'
+  | 'DireccionGeneral'
+  | 'AreaAdministracion'
+  | 'UnidadAcademica'
+  | 'AreaPrograma';
 
 export const AREA_LABELS: Record<Area, string> = {
   MesaDePartes: 'Mesa de Partes',
   SecretariaAcademica: 'Secretaría Académica',
   DireccionGeneral: 'Dirección General',
+  AreaAdministracion: 'Área de Administración',
+  UnidadAcademica: 'Unidad Académica',
+  AreaPrograma: 'Área del programa',
 };
+
+/**
+ * Labels an área, resolving `AreaPrograma` to the trámite's own program name
+ * when one is given. Every área label in the UI should go through this
+ * rather than reading AREA_LABELS directly, so AreaPrograma never renders
+ * as the generic fallback when a program name is available.
+ */
+export function areaLabel(area: Area, programName?: string | null): string {
+  if (area === 'AreaPrograma' && programName) return `Área de ${programName}`;
+  return AREA_LABELS[area];
+}
 
 /** The state a trámite is in, independent of which área holds it. */
 export type Estado = 'EnTramite' | 'EnEntrega' | 'Observado' | 'Completado' | 'Rechazado';
@@ -100,6 +135,13 @@ export const AREA_STATUSES: { area: Area; enTramite: ProcedureStatus; enEntrega:
   { area: 'DireccionGeneral', enTramite: 'DireccionGeneral', enEntrega: 'EntregaDireccionGeneral' },
 ];
 
+/** Occasional derivation áreas — no paired "en entrega" counterpart of their own. */
+export const DERIVATION_AREAS: { area: Area; status: ProcedureStatus }[] = [
+  { area: 'AreaAdministracion', status: 'AreaAdministracion' },
+  { area: 'UnidadAcademica', status: 'UnidadAcademica' },
+  { area: 'AreaPrograma', status: 'AreaPrograma' },
+];
+
 const AREA_BY_STATUS: Partial<Record<ProcedureStatus, Area>> = {};
 const ESTADO_BY_STATUS = {} as Record<ProcedureStatus, Estado>;
 for (const { area, enTramite, enEntrega } of AREA_STATUSES) {
@@ -107,6 +149,10 @@ for (const { area, enTramite, enEntrega } of AREA_STATUSES) {
   AREA_BY_STATUS[enEntrega] = area;
   ESTADO_BY_STATUS[enTramite] = 'EnTramite';
   ESTADO_BY_STATUS[enEntrega] = 'EnEntrega';
+}
+for (const { area, status } of DERIVATION_AREAS) {
+  AREA_BY_STATUS[status] = area;
+  ESTADO_BY_STATUS[status] = 'EnTramite';
 }
 ESTADO_BY_STATUS.Completado = 'Completado';
 ESTADO_BY_STATUS.Observado = 'Observado';
@@ -259,6 +305,7 @@ export interface ProcedureListItem {
   applicantName: string;
   procedureTypeName: string;
   programCode: string;
+  programName: string;
   shift: Shift;
   registeredByName: string;
   personInChargeName: string | null;
@@ -287,6 +334,7 @@ export interface ProcedureDetail {
   studentDni: string;
   programId: number;
   programCode: string;
+  programName: string;
   shift: Shift;
   personInChargeId: number | null;
   personInChargeName: string | null;
@@ -324,6 +372,7 @@ export interface PublicProcedureResult {
   applicantName: string;
   procedureTypeName: string;
   programCode: string;
+  programName: string;
   status: ProcedureStatus;
   resumeStage: ProcedureStatus | null;
   registeredAt: string;
