@@ -4,55 +4,43 @@ import { api } from '../../api/client';
 import { AreaBadge, Button, Card, EmptyState, EstadoBadge, Input, Select } from '../../components/ui';
 import {
   AREA_LABELS,
-  AREA_STATUSES,
+  CIRCUIT_AREAS,
   DERIVATION_AREAS,
   ESTADO_LABELS,
   SHIFT_SHORT,
   areaLabel,
-  describeStatus,
+  type Area,
   type Estado,
   type ProcedureListItem,
-  type ProcedureStatus,
 } from '../../types/domain';
 import { formatDate, todayLimaISODate } from '../../utils/format';
 
-type FilterValue = { kind: 'status'; value: ProcedureStatus } | { kind: 'estado'; value: Estado } | null;
-
-function encodeFilter(f: FilterValue): string {
-  if (!f) return '';
-  return `${f.kind === 'status' ? 's' : 'e'}:${f.value}`;
-}
-
-function decodeFilter(raw: string): FilterValue {
-  if (!raw) return null;
-  const [kind, value] = raw.split(':');
-  return kind === 's' ? { kind: 'status', value: value as ProcedureStatus } : { kind: 'estado', value: value as Estado };
-}
+const ALL_ESTADOS = Object.keys(ESTADO_LABELS) as Estado[];
 
 function planillaRows(items: ProcedureListItem[]) {
-  return items.map((p) => {
-    const { area, estado } = describeStatus(p.status, p.resumeStage);
-    return {
-      Correlativo: `${p.correlativeNumber}-${p.correlativeYear}`,
-      'Doc. presentado': p.documentType + (p.documentNumber ? ` (${p.documentNumber})` : ''),
-      Fecha: formatDate(p.registeredAt),
-      Expediente: p.fileNumber,
-      Nombres: p.applicantName,
-      'Tipo trámite': p.procedureTypeName,
-      'Programa/Turno': `${p.programCode}/${SHIFT_SHORT[p.shift]}`,
-      'Registrado por': p.registeredByName,
-      Responsable: p.personInChargeName ?? '—',
-      Área: area ? areaLabel(area, p.programName) : '—',
-      Estado: ESTADO_LABELS[estado],
-    };
-  });
+  return items.map((p) => ({
+    Correlativo: `${p.correlativeNumber}-${p.correlativeYear}`,
+    'Doc. presentado': p.documentType + (p.documentNumber ? ` (${p.documentNumber})` : ''),
+    Fecha: formatDate(p.registeredAt),
+    Expediente: p.fileNumber,
+    Nombres: p.applicantName,
+    'Tipo trámite': p.procedureTypeName,
+    'Programa/Turno': `${p.programCode}/${SHIFT_SHORT[p.shift]}`,
+    'Registrado por': p.registeredByName,
+    Responsable: p.personInChargeName ?? '—',
+    Área: areaLabel(p.area, p.programName),
+    Estado: ESTADO_LABELS[p.estado],
+  }));
 }
 
 export function ProceduresListPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<ProcedureListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<FilterValue>(null);
+  // Área and estado are independent columns on the backend, so they compose:
+  // "observado en Secretaría Académica" is just both filters set at once.
+  const [area, setArea] = useState<Area | ''>('');
+  const [estado, setEstado] = useState<Estado | ''>('');
   const [search, setSearch] = useState('');
   const [year, setYear] = useState<number | ''>('');
   // Defaults to "today" (Lima) per operator request — Mesa de Partes mostly
@@ -63,22 +51,22 @@ export function ProceduresListPage() {
     setLoading(true);
     api.procedures
       .list({
-        status: filter?.kind === 'status' ? filter.value : undefined,
-        estado: filter?.kind === 'estado' ? filter.value : undefined,
+        area: area || undefined,
+        estado: estado || undefined,
         search: search || undefined,
         year: year || undefined,
         date: date || undefined,
       })
       .then(setItems)
       .finally(() => setLoading(false));
-  }, [filter, search, year, date]);
+  }, [area, estado, search, year, date]);
 
   const years = useMemo(() => {
     const current = new Date().getFullYear();
     return Array.from({ length: 6 }, (_, i) => current - i);
   }, []);
 
-  const showingToday = date === todayLimaISODate() && !filter && !search && !year;
+  const showingToday = date === todayLimaISODate() && !area && !estado && !search && !year;
 
   function exportXlsx() {
     import('xlsx').then((XLSX) => {
@@ -141,31 +129,35 @@ export function ProceduresListPage() {
           className="max-w-xs"
         />
         <Select
-          value={encodeFilter(filter)}
-          onChange={(e) => setFilter(decodeFilter(e.target.value))}
-          className="max-w-64"
+          value={area}
+          onChange={(e) => setArea(e.target.value as Area | '')}
+          className="max-w-56"
         >
-          <option value="">TODOS</option>
-          {AREA_STATUSES.map(({ area, enTramite, enEntrega }) => (
-            <optgroup key={area} label={`Área — ${AREA_LABELS[area]}`}>
-              <option value={`s:${enTramite}`}>En trámite</option>
-              <option value={`s:${enEntrega}`}>En entrega</option>
-            </optgroup>
+          <option value="">TODAS LAS ÁREAS</option>
+          {CIRCUIT_AREAS.map((a) => (
+            <option key={a} value={a}>
+              {AREA_LABELS[a]}
+            </option>
           ))}
           <optgroup label="Otras áreas">
-            {DERIVATION_AREAS.map(({ area, status }) => (
-              <option key={status} value={`s:${status}`}>
-                {AREA_LABELS[area]}
+            {DERIVATION_AREAS.map((a) => (
+              <option key={a} value={a}>
+                {AREA_LABELS[a]}
               </option>
             ))}
           </optgroup>
-          <optgroup label="Estados">
-            <option value="e:EnTramite">En trámite (todas las áreas)</option>
-            <option value="e:EnEntrega">En entrega (todas las áreas)</option>
-            <option value="e:Completado">Completado</option>
-            <option value="e:Observado">Observado</option>
-            <option value="e:Rechazado">Rechazado</option>
-          </optgroup>
+        </Select>
+        <Select
+          value={estado}
+          onChange={(e) => setEstado(e.target.value as Estado | '')}
+          className="max-w-48"
+        >
+          <option value="">TODOS LOS ESTADOS</option>
+          {ALL_ESTADOS.map((es) => (
+            <option key={es} value={es}>
+              {ESTADO_LABELS[es]}
+            </option>
+          ))}
         </Select>
         <Select value={year} onChange={(e) => setYear(e.target.value ? Number(e.target.value) : '')} className="max-w-32">
           <option value="">TODOS LOS AÑOS</option>
@@ -179,12 +171,13 @@ export function ProceduresListPage() {
           <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-ink-soft">Fecha</span>
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="max-w-40" />
         </label>
-        {(date || filter || search || year) && (
+        {(date || area || estado || search || year) && (
           <Button
             variant="secondary"
             onClick={() => {
               setDate('');
-              setFilter(null);
+              setArea('');
+              setEstado('');
               setSearch('');
               setYear('');
             }}
@@ -220,7 +213,6 @@ export function ProceduresListPage() {
             </thead>
             <tbody>
               {items.map((p) => {
-                const { area, estado } = describeStatus(p.status, p.resumeStage);
                 return (
                   <tr
                     key={p.id}
@@ -242,10 +234,10 @@ export function ProceduresListPage() {
                       {p.personInChargeName ?? <span className="text-ink-soft">—</span>}
                     </td>
                     <td className="px-3 py-2">
-                      <AreaBadge area={area} programName={p.programName} />
+                      <AreaBadge area={p.area} programName={p.programName} />
                     </td>
                     <td className="px-3 py-2">
-                      <EstadoBadge estado={estado} />
+                      <EstadoBadge estado={p.estado} />
                     </td>
                   </tr>
                 );

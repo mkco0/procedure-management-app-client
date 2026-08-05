@@ -1,4 +1,4 @@
-import { STATUS_LABELS, WORKFLOW_STEPS, areaLabel, describeStatus, type ProcedureStatus } from '../types/domain';
+import { WORKFLOW_STEPS, areaLabel, isDetoured, stepIndex, type Area, type Estado } from '../types/domain';
 
 /**
  * Signature element: an institutional "circuit" stepper styled like a chain
@@ -6,37 +6,34 @@ import { STATUS_LABELS, WORKFLOW_STEPS, areaLabel, describeStatus, type Procedur
  * between Mesa de Partes → ... → Completado. Observado/Rechazado are
  * called out separately since they're off the happy path.
  *
- * The "Entrega" step stands for three parallel offices (see WORKFLOW_STEPS):
- * it renders as a single stamp and, once reached, takes the label of the
- * office the expediente is actually being handed over at.
+ * The "Entrega" step stands for three parallel offices: it renders as a
+ * single stamp and, once reached (estado ParaEntrega), takes the label of
+ * the office the expediente is actually being handed over at.
  */
 export function StatusStepper({
-  status,
-  resumeStage,
+  area,
+  estado,
   programName,
 }: {
-  status: ProcedureStatus;
-  resumeStage?: ProcedureStatus | null;
+  area: Area;
+  estado: Estado;
   programName?: string | null;
 }) {
-  const currentIndex = WORKFLOW_STEPS.findIndex((step) => step.statuses.includes(status));
-  const { area, estado } = describeStatus(status, resumeStage);
-  const isDetoured = estado === 'Observado' || estado === 'Rechazado';
+  const currentIndex = stepIndex(area, estado);
+  const detoured = isDetoured(estado);
 
   return (
     <div className="w-full">
       <ol className="flex xs:flex-row flex-col items-center">
         {WORKFLOW_STEPS.map((step, i) => {
-          const done = !isDetoured && i < currentIndex;
-          const active = !isDetoured && i === currentIndex;
-          // A grouped step names the specific office only while it's the
-          // current one; otherwise it keeps its generic label.
-          const label =
-            active && step.statuses.length > 1
-              ? status === 'AreaPrograma'
-                ? areaLabel('AreaPrograma', programName)
-                : STATUS_LABELS[status]
-              : step.label;
+          const done = !detoured && i < currentIndex;
+          const active = !detoured && i === currentIndex;
+          // The Secretaría Académica step covers the derivation áreas too, and
+          // the Entrega step covers all three hand-over offices; while either
+          // is the current step, show the specific área rather than the
+          // generic group label.
+          const grouped = step.areas.length !== 1;
+          const label = active && grouped ? areaLabel(area, programName) : step.label;
           return (
             <li key={step.label} className="flex flex-1 items-center last:flex-none">
               <div className="flex flex-col items-center gap-1.5">
@@ -67,7 +64,7 @@ export function StatusStepper({
         })}
       </ol>
 
-      {isDetoured && (
+      {detoured && (
         <div
           className="mt-4 flex items-center gap-2 rounded-sm border px-3 py-2 text-sm font-medium"
           style={{
@@ -75,9 +72,9 @@ export function StatusStepper({
             color: estado === 'Rechazado' ? 'var(--color-estado-rechazado)' : 'var(--color-estado-observado)',
           }}
         >
-          {estado === 'Observado' && area
+          {estado === 'Observado'
             ? `Observado en ${areaLabel(area, programName)} — retomará ahí una vez resuelto.`
-            : `Fuera del circuito regular: ${STATUS_LABELS[status]}`}
+            : `Fuera del circuito regular: rechazado en ${areaLabel(area, programName)}`}
         </div>
       )}
     </div>

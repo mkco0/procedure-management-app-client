@@ -295,10 +295,10 @@ const AREA_COLOR_VAR: Record<Area, string> = {
 };
 
 /**
- * Which office holds the expediente. `area` is null for statuses with no
- * office (Completado/Rechazado, or Observado with no recorded resume
- * stage). Pass `programName` to resolve an `AreaPrograma` area to the
- * trámite's own program instead of the generic "Área del programa" label.
+ * Which office holds the expediente. Pass `programName` to resolve an
+ * `AreaPrograma` area to the trámite's own program instead of the generic
+ * "Área del programa" label. `area` is always present now that área and
+ * estado are stored independently; the null branch is just defensive.
  */
 export function AreaBadge({ area, programName }: { area: Area | null; programName?: string | null }) {
   if (!area) return <span className="text-sm text-ink-soft">—</span>;
@@ -316,7 +316,7 @@ export function AreaBadge({ area, programName }: { area: Area | null; programNam
 
 const ESTADO_COLOR_VAR: Record<Estado, string> = {
   EnTramite: 'var(--color-estado-tramite)',
-  EnEntrega: 'var(--color-estado-entrega)',
+  ParaEntrega: 'var(--color-estado-entrega)',
   Completado: 'var(--color-estado-completado)',
   Observado: 'var(--color-estado-observado)',
   Rechazado: 'var(--color-estado-rechazado)',

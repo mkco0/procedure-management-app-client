@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api, ApiError } from '../../api/client';
 import { StatusStepper } from '../../components/StatusStepper';
 import { AreaBadge, Button, Card, EmptyState, ErrorNotice, EstadoBadge } from '../../components/ui';
-import { describeStatus, type PublicProcedureResult } from '../../types/domain';
+import type { PublicProcedureResult } from '../../types/domain';
 import { formatDateTime } from '../../utils/format';
 
 const CREDENTIALS_KEY = 'tramite_lookup_credentials';
@@ -79,12 +79,12 @@ export function TramiteStatusPage() {
         Registrado en: {formatDateTime(result.registeredAt)}
       </p>
       <div className="mt-3 flex items-center gap-2">
-        <AreaBadge area={describeStatus(result.status, result.resumeStage).area} programName={result.programName} />
-        <EstadoBadge estado={describeStatus(result.status, result.resumeStage).estado} />
+        <AreaBadge area={result.area} programName={result.programName} />
+        <EstadoBadge estado={result.estado} />
       </div>
 
       <Card className="mt-6 p-6">
-        <StatusStepper status={result.status} resumeStage={result.resumeStage} programName={result.programName} />
+        <StatusStepper area={result.area} estado={result.estado} programName={result.programName} />
       </Card>
 
       <Card className="mt-6 p-6">
@@ -93,13 +93,15 @@ export function TramiteStatusPage() {
         </h2>
         <ol className="flex flex-col gap-3">
           {result.history.map((h, i) => {
-            const { area, estado } = describeStatus(h.status);
+            // Suppress the timestamp on the initial Mesa de Partes reception
+            // row — it coincides with registration and reads as noise.
+            const isReception = h.area === 'MesaDePartes' && h.estado === 'EnTramite';
             return (
               <li key={i} className="border-l-2 border-line pl-4">
                 <div className="flex xs:flex-row flex-col items-center gap-2">
-                  <AreaBadge area={area} programName={result.programName} />
-                  <EstadoBadge estado={estado} />
-                  {h.status !== 'MesaDePartes' && (
+                  <AreaBadge area={h.area} programName={result.programName} />
+                  <EstadoBadge estado={h.estado} />
+                  {!isReception && (
                     <p className="text-sm font-medium text-ink">{formatDateTime(h.changedAt)}</p>
                   )}
                 </div>

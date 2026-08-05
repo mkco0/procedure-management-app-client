@@ -1,5 +1,5 @@
 // Single source of truth on the frontend for domain enums and field limits,
-// mirroring TramitesApi/Common/Enums.cs and FieldLimits.cs on the backend.
+// mirroring ProceduresAPI/Common/Enums.cs and FieldLimits.cs on the backend.
 
 export type UserRole = 'Admin' | 'Secretary';
 
@@ -9,80 +9,12 @@ export type PresentedNumberMode = 'None' | 'Identifier' | 'Description';
 
 export type IdentityNumberMode = 'DniDigits' | 'Alphanumeric';
 
-export type ProcedureStatus =
-  | 'MesaDePartes'
-  | 'SecretariaAcademica'
-  | 'DireccionGeneral'
-  | 'AreaAdministracion'
-  | 'UnidadAcademica'
-  | 'AreaPrograma'
-  | 'EntregaSecretaria'
-  | 'EntregaMesaDePartes'
-  | 'EntregaDireccionGeneral'
-  | 'Completado'
-  | 'Observado'
-  | 'Rechazado';
-
-export const STATUS_LABELS: Record<ProcedureStatus, string> = {
-  MesaDePartes: 'Mesa de partes',
-  SecretariaAcademica: 'Secretaría Académica',
-  DireccionGeneral: 'Dirección General',
-  AreaAdministracion: 'Área de Administración',
-  UnidadAcademica: 'Unidad Académica',
-  AreaPrograma: 'Área del programa',
-  EntregaSecretaria: 'Entrega - Secretaría Académica',
-  EntregaMesaDePartes: 'Entrega - Mesa de Partes',
-  EntregaDireccionGeneral: 'Entrega - Dirección General',
-  Completado: 'Completado',
-  Observado: 'Observado',
-  Rechazado: 'Rechazado',
-};
-
-/** The three parallel hand-over stages that all converge on Completado. */
-export const DELIVERY_STATUSES: ProcedureStatus[] = [
-  'EntregaSecretaria',
-  'EntregaMesaDePartes',
-  'EntregaDireccionGeneral',
-];
-
-/** Every status on the regular circuit, in canonical order (used for filters). */
-export const STATUS_ORDER: ProcedureStatus[] = [
-  'MesaDePartes',
-  'SecretariaAcademica',
-  'DireccionGeneral',
-  ...DELIVERY_STATUSES,
-  'Completado',
-];
-
-/**
- * The circuit as five sequential steps for the stepper. The delivery step
- * groups the three "Entrega - …" statuses, since they're parallel options at
- * the same point of the flow rather than stages that follow one another.
- */
-export interface WorkflowStep {
-  label: string;
-  statuses: ProcedureStatus[];
-}
-
-export const WORKFLOW_STEPS: WorkflowStep[] = [
-  { label: 'Mesa de partes', statuses: ['MesaDePartes'] },
-  // Groups the three occasional derivation áreas with Secretaría Académica —
-  // they're all reached from there and aren't a separate circuit stage.
-  {
-    label: 'Secretaría Académica',
-    statuses: ['SecretariaAcademica', 'AreaAdministracion', 'UnidadAcademica', 'AreaPrograma'],
-  },
-  { label: 'Dirección General', statuses: ['DireccionGeneral'] },
-  { label: 'Entrega', statuses: DELIVERY_STATUSES },
-  { label: 'Completado', statuses: ['Completado'] },
-];
-
 // ---------------- Área / Estado taxonomy ----------------
 //
-// A ProcedureStatus conflates two axes: which office physically holds the
-// expediente (área) and what state it's in (estado). This section resolves
-// any status onto that pair — the single source of truth the UI reads from
-// instead of re-deriving it status-by-status in each component.
+// A trámite is described by two independent axes, stored as separate columns
+// on the backend: which office physically holds the expediente (área) and
+// what state it's in (estado). Every DTO carries both directly, so the UI
+// reads them straight off the server rather than deriving them.
 
 /**
  * Every área a trámite can physically be at: the three offices on the
@@ -106,6 +38,12 @@ export const AREA_LABELS: Record<Area, string> = {
   AreaPrograma: 'Área del programa',
 };
 
+/** The three offices on the regular circuit, in order (used for filters). */
+export const CIRCUIT_AREAS: Area[] = ['MesaDePartes', 'SecretariaAcademica', 'DireccionGeneral'];
+
+/** Occasional derivation áreas — off the regular circuit. */
+export const DERIVATION_AREAS: Area[] = ['AreaAdministracion', 'UnidadAcademica', 'AreaPrograma'];
+
 /**
  * Labels an área, resolving `AreaPrograma` to the trámite's own program name
  * when one is given. Every área label in the UI should go through this
@@ -118,62 +56,61 @@ export function areaLabel(area: Area, programName?: string | null): string {
 }
 
 /** The state a trámite is in, independent of which área holds it. */
-export type Estado = 'EnTramite' | 'EnEntrega' | 'Observado' | 'Completado' | 'Rechazado';
+export type Estado = 'EnTramite' | 'ParaEntrega' | 'Observado' | 'Completado' | 'Rechazado';
 
 export const ESTADO_LABELS: Record<Estado, string> = {
   EnTramite: 'En trámite',
-  EnEntrega: 'En entrega',
+  // "Para entrega", not "En entrega": the document is finished and waiting
+  // at its área to be collected, not in transit between offices.
+  ParaEntrega: 'Para entrega',
   Observado: 'Observado',
   Completado: 'Completado',
   Rechazado: 'Rechazado',
 };
 
-/** Each office's pair of statuses — while work is in progress, and once it's ready for hand-over there. */
-export const AREA_STATUSES: { area: Area; enTramite: ProcedureStatus; enEntrega: ProcedureStatus }[] = [
-  { area: 'MesaDePartes', enTramite: 'MesaDePartes', enEntrega: 'EntregaMesaDePartes' },
-  { area: 'SecretariaAcademica', enTramite: 'SecretariaAcademica', enEntrega: 'EntregaSecretaria' },
-  { area: 'DireccionGeneral', enTramite: 'DireccionGeneral', enEntrega: 'EntregaDireccionGeneral' },
+/** Estados that sit off the regular circuit — the stepper calls these out separately. */
+export function isDetoured(estado: Estado): boolean {
+  return estado === 'Observado' || estado === 'Rechazado';
+}
+
+// ---------------- Circuit stepper ----------------
+//
+// The circuit as five sequential steps. The first three are keyed by área;
+// "Entrega" and "Completado" are reached by estado (ParaEntrega / Completado)
+// regardless of which office holds the expediente. The Secretaría Académica
+// step also stands in for the three occasional derivation áreas, since
+// they're all reached from there and aren't a separate circuit stage.
+
+export interface WorkflowStep {
+  label: string;
+  /** Áreas whose in-progress state sits at this step (empty for estado-driven steps). */
+  areas: Area[];
+}
+
+export const WORKFLOW_STEPS: WorkflowStep[] = [
+  { label: 'Mesa de partes', areas: ['MesaDePartes'] },
+  {
+    label: 'Secretaría Académica',
+    areas: ['SecretariaAcademica', 'AreaAdministracion', 'UnidadAcademica', 'AreaPrograma'],
+  },
+  { label: 'Dirección General', areas: ['DireccionGeneral'] },
+  { label: 'Entrega', areas: [] },
+  { label: 'Completado', areas: [] },
 ];
 
-/** Occasional derivation áreas — no paired "en entrega" counterpart of their own. */
-export const DERIVATION_AREAS: { area: Area; status: ProcedureStatus }[] = [
-  { area: 'AreaAdministracion', status: 'AreaAdministracion' },
-  { area: 'UnidadAcademica', status: 'UnidadAcademica' },
-  { area: 'AreaPrograma', status: 'AreaPrograma' },
-];
-
-const AREA_BY_STATUS: Partial<Record<ProcedureStatus, Area>> = {};
-const ESTADO_BY_STATUS = {} as Record<ProcedureStatus, Estado>;
-for (const { area, enTramite, enEntrega } of AREA_STATUSES) {
-  AREA_BY_STATUS[enTramite] = area;
-  AREA_BY_STATUS[enEntrega] = area;
-  ESTADO_BY_STATUS[enTramite] = 'EnTramite';
-  ESTADO_BY_STATUS[enEntrega] = 'EnEntrega';
-}
-for (const { area, status } of DERIVATION_AREAS) {
-  AREA_BY_STATUS[status] = area;
-  ESTADO_BY_STATUS[status] = 'EnTramite';
-}
-ESTADO_BY_STATUS.Completado = 'Completado';
-ESTADO_BY_STATUS.Observado = 'Observado';
-ESTADO_BY_STATUS.Rechazado = 'Rechazado';
-
-/** True for the six statuses that name a physical office (in-progress or delivery). */
-export function isAreaStatus(status: ProcedureStatus): boolean {
-  return status in AREA_BY_STATUS;
-}
+export const ENTREGA_STEP_INDEX = 3;
+export const COMPLETADO_STEP_INDEX = 4;
 
 /**
- * Resolves a stored status into the (área, estado) pair the UI shows.
- * `resumeStage` — required to know where an Observado trámite is held —
- * comes from ProcedureDetail/ProcedureListItem/PublicProcedureResult.
+ * Which circuit step an (área, estado) pair sits at. Completado and
+ * ParaEntrega are positioned by estado; every other estado is positioned by
+ * área. A detoured estado (Observado/Rechazado) still resolves to its área's
+ * step so the stepper can show how far the trámite had progressed.
  */
-export function describeStatus(
-  status: ProcedureStatus,
-  resumeStage?: ProcedureStatus | null,
-): { area: Area | null; estado: Estado } {
-  const area = AREA_BY_STATUS[status] ?? (resumeStage ? (AREA_BY_STATUS[resumeStage] ?? null) : null);
-  return { area, estado: ESTADO_BY_STATUS[status] };
+export function stepIndex(area: Area, estado: Estado): number {
+  if (estado === 'Completado') return COMPLETADO_STEP_INDEX;
+  if (estado === 'ParaEntrega') return ENTREGA_STEP_INDEX;
+  return WORKFLOW_STEPS.findIndex((s) => s.areas.includes(area));
 }
 
 export const ROLE_LABELS: Record<UserRole, string> = {
@@ -202,6 +139,8 @@ export const FIELD_LIMITS = {
   fileNumberMax: 20,
   passwordMin: 6,
   procedureTypeOtherMax: 200,
+  nameMax: 200,
+  codeMax: 20,
 };
 
 export const PROCEDURE_TYPE_OTHER_NAME = 'Otro';
@@ -309,12 +248,13 @@ export interface ProcedureListItem {
   shift: Shift;
   registeredByName: string;
   personInChargeName: string | null;
-  status: ProcedureStatus;
-  resumeStage: ProcedureStatus | null;
+  area: Area;
+  estado: Estado;
 }
 
 export interface ProcedureHistoryItem {
-  status: ProcedureStatus;
+  area: Area;
+  estado: Estado;
   changedByName: string;
   comment: string | null;
   changedAt: string;
@@ -338,11 +278,15 @@ export interface ProcedureDetail {
   shift: Shift;
   personInChargeId: number | null;
   personInChargeName: string | null;
-  status: ProcedureStatus;
-  resumeStage: ProcedureStatus | null;
+  area: Area;
+  estado: Estado;
   comment: string | null;
   registeredAt: string;
-  allowedNextStatuses: ProcedureStatus[];
+  // The conventional next step, for the UI to pre-select. Null on a terminal
+  // trámite. Every other (área, estado) pair stays selectable — this is a
+  // default, not a whitelist.
+  suggestedArea: Area | null;
+  suggestedEstado: Estado | null;
   history: ProcedureHistoryItem[];
 }
 
@@ -362,7 +306,8 @@ export interface CorrelativeYearItem {
 // ---------------- Public lookup ----------------
 
 export interface PublicHistoryItem {
-  status: ProcedureStatus;
+  area: Area;
+  estado: Estado;
   comment: string | null;
   changedAt: string;
 }
@@ -373,8 +318,8 @@ export interface PublicProcedureResult {
   procedureTypeName: string;
   programCode: string;
   programName: string;
-  status: ProcedureStatus;
-  resumeStage: ProcedureStatus | null;
+  area: Area;
+  estado: Estado;
   registeredAt: string;
   history: PublicHistoryItem[];
 }

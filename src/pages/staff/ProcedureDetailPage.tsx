@@ -17,18 +17,21 @@ import {
   Textarea,
 } from '../../components/ui';
 import {
+  CIRCUIT_AREAS,
+  DERIVATION_AREAS,
+  ESTADO_LABELS,
   PROCEDURE_TYPE_OTHER_NAME,
   SHIFT_LABELS,
-  STATUS_LABELS,
   areaLabel,
-  describeStatus,
-  isAreaStatus,
+  type Area,
+  type Estado,
   type ProcedureDetail,
-  type ProcedureStatus,
   type Shift,
 } from '../../types/domain';
 import { formatDateTime } from '../../utils/format';
 import { useCatalogs } from '../../utils/useCatalogs';
+
+const ALL_ESTADOS = Object.keys(ESTADO_LABELS) as Estado[];
 
 interface EditForm {
   documentType: string;
@@ -52,7 +55,8 @@ export function ProcedureDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [nextStatus, setNextStatus] = useState<ProcedureStatus | ''>('');
+  const [nextArea, setNextArea] = useState<Area | ''>('');
+  const [nextEstado, setNextEstado] = useState<Estado | ''>('');
   const [statusComment, setStatusComment] = useState('');
   const [changingStatus, setChangingStatus] = useState(false);
 
@@ -61,11 +65,13 @@ export function ProcedureDetailPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
-  // An observed trámite defaults to resuming the área it was raised from —
-  // the server lists it first in allowedNextStatuses — but that's just the
-  // default; any other option remains selectable.
-  function defaultNextStatus(p: ProcedureDetail): ProcedureStatus | '' {
-    return p.status === 'Observado' && p.allowedNextStatuses.length > 0 ? p.allowedNextStatuses[0] : '';
+  // Seed the "advance" controls with the server's conventional next step
+  // (suggestedArea/suggestedEstado), falling back to the current pair when
+  // the trámite is terminal and has no suggestion. Either axis stays freely
+  // changeable — this is only the default selection.
+  function seedNext(p: ProcedureDetail) {
+    setNextArea(p.suggestedArea ?? p.area);
+    setNextEstado(p.suggestedEstado ?? p.estado);
   }
 
   async function load() {
@@ -74,7 +80,7 @@ export function ProcedureDetailPage() {
     try {
       const data = await api.procedures.get(Number(id));
       setProcedure(data);
-      setNextStatus(defaultNextStatus(data));
+      seedNext(data);
       setStatusComment('');
     } finally {
       setLoading(false);
@@ -136,13 +142,13 @@ export function ProcedureDetailPage() {
   }
 
   async function submitStatusChange() {
-    if (!procedure || !nextStatus) return;
+    if (!procedure || !nextArea || !nextEstado) return;
     setError(null);
     setChangingStatus(true);
     try {
-      const updated = await api.procedures.changeStatus(procedure.id, nextStatus, statusComment || undefined);
+      const updated = await api.procedures.changeStatus(procedure.id, nextArea, nextEstado, statusComment || undefined);
       setProcedure(updated);
-      setNextStatus(defaultNextStatus(updated));
+      seedNext(updated);
       setStatusComment('');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo actualizar el estado.');
@@ -161,16 +167,13 @@ export function ProcedureDetailPage() {
   if (loading) return <p className="text-sm text-ink-soft">Cargando…</p>;
   if (!procedure) return <p className="text-sm text-ink-soft">Trámite no encontrado.</p>;
 
-  const requiresComment = nextStatus === 'Observado';
+  const requiresComment = nextEstado === 'Observado';
+  // A status change has to change something; the server rejects a no-op, so
+  // disable the button when neither axis differs from the current pair.
+  const isNoop = nextArea === procedure.area && nextEstado === procedure.estado;
   const editSelectedPresented = catalogs.presentedDocumentTypes.find((d) => d.code === editForm?.documentType);
   const editSelectedType = catalogs.procedureTypes.find((t) => String(t.id) === editForm?.procedureTypeId);
   const editIsOtherType = editSelectedType?.name === PROCEDURE_TYPE_OTHER_NAME;
-
-  // AreaPrograma resolves to this trámite's own program; every other status
-  // keeps its fixed label.
-  function statusLabel(s: ProcedureStatus): string {
-    return s === 'AreaPrograma' ? areaLabel('AreaPrograma', procedure!.programName) : STATUS_LABELS[s];
-  }
 
   return (
     <div>
@@ -190,7 +193,7 @@ export function ProcedureDetailPage() {
       </PageHeader>
 
       <Card className="p-6">
-        <StatusStepper status={procedure.status} resumeStage={procedure.resumeStage} programName={procedure.programName} />
+        <StatusStepper area={procedure.area} estado={procedure.estado} programName={procedure.programName} />
       </Card>
 
       {editing && editForm && (
@@ -333,51 +336,51 @@ export function ProcedureDetailPage() {
         </Card>
       )}
 
-      {!editing && procedure.allowedNextStatuses.length > 0 && (
+      {!editing && (
         <Card className="mt-4 p-6">
           <h2 className="mb-3 font-[family-name:var(--font-display)] text-base font-semibold text-navy-900">
             Avanzar trámite
           </h2>
           <div className="flex flex-wrap items-end gap-3">
-            <Field label="Siguiente paso">
-              <Select value={nextStatus} onChange={(e) => setNextStatus(e.target.value as ProcedureStatus | '')}>
-                <option value="">Seleccione…</option>
-                {procedure.allowedNextStatuses.some(isAreaStatus) && (
-                  <optgroup label="Mover a otra área">
-                    {procedure.allowedNextStatuses.filter(isAreaStatus).map((s) => (
-                      <option key={s} value={s}>
-                        {statusLabel(s)}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {procedure.allowedNextStatuses.some((s) => !isAreaStatus(s)) && (
-                  <optgroup label="Cambiar estado">
-                    {procedure.allowedNextStatuses.filter((s) => !isAreaStatus(s)).map((s) => (
-                      <option key={s} value={s}>
-                        {statusLabel(s)}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
+            <Field label="Área">
+              <Select value={nextArea} onChange={(e) => setNextArea(e.target.value as Area)}>
+                {CIRCUIT_AREAS.map((a) => (
+                  <option key={a} value={a}>
+                    {areaLabel(a, procedure.programName)}
+                  </option>
+                ))}
+                <optgroup label="Otras áreas">
+                  {DERIVATION_AREAS.map((a) => (
+                    <option key={a} value={a}>
+                      {areaLabel(a, procedure.programName)}
+                    </option>
+                  ))}
+                </optgroup>
               </Select>
             </Field>
-            <Button onClick={submitStatusChange} disabled={!nextStatus || changingStatus}>
+            <Field label="Estado">
+              <Select value={nextEstado} onChange={(e) => setNextEstado(e.target.value as Estado)}>
+                {ALL_ESTADOS.map((es) => (
+                  <option key={es} value={es}>
+                    {ESTADO_LABELS[es]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Button onClick={submitStatusChange} disabled={isNoop || changingStatus}>
               {changingStatus ? 'Actualizando…' : 'Confirmar cambio'}
             </Button>
           </div>
-          {nextStatus && (
-            <div className="mt-3 max-w-md">
-              <Field label={requiresComment ? 'Observación (obligatoria)' : 'Comentario (opcional)'}>
-                <Textarea
-                  value={statusComment}
-                  onChange={(e) => setStatusComment(e.target.value)}
-                  rows={2}
-                  required={requiresComment}
-                />
-              </Field>
-            </div>
-          )}
+          <div className="mt-3 max-w-md">
+            <Field label={requiresComment ? 'Observación (obligatoria)' : 'Comentario (opcional)'}>
+              <Textarea
+                value={statusComment}
+                onChange={(e) => setStatusComment(e.target.value)}
+                rows={2}
+                required={requiresComment}
+              />
+            </Field>
+          </div>
           {error && (
             <div className="mt-3">
               <ErrorNotice message={error} />
@@ -395,16 +398,13 @@ export function ProcedureDetailPage() {
             <div className="flex justify-between items-center gap-4 border-b border-line pb-2">
               <dt className="text-ink-soft">Área</dt>
               <dd>
-                <AreaBadge
-                  area={describeStatus(procedure.status, procedure.resumeStage).area}
-                  programName={procedure.programName}
-                />
+                <AreaBadge area={procedure.area} programName={procedure.programName} />
               </dd>
             </div>
             <div className="flex justify-between items-center gap-4 border-b border-line pb-2">
               <dt className="text-ink-soft">Estado</dt>
               <dd>
-                <EstadoBadge estado={describeStatus(procedure.status, procedure.resumeStage).estado} />
+                <EstadoBadge estado={procedure.estado} />
               </dd>
             </div>
             <Row label="Documento de identidad" value={procedure.studentDni}>
@@ -428,19 +428,20 @@ export function ProcedureDetailPage() {
             Historial
           </h2>
           <ol className="flex flex-col gap-3">
-            {procedure.history.map((h, i) => (
-              <li key={i} className="border-l-2 border-line pl-3">
-                <p className="text-sm font-medium text-ink">
-                  {statusLabel(h.status)} · {h.changedByName}
-                </p>
-                {h.status === 'MesaDePartes' ? (
-                  <></>
-                ) : (
-                  <p className="text-xs text-ink-soft">{formatDateTime(h.changedAt)}</p>
-                )}
-                {h.comment && <p className="mt-0.5 text-sm text-ink-soft">{h.comment}</p>}
-              </li>
-            ))}
+            {procedure.history.map((h, i) => {
+              // The initial Mesa de Partes reception shares its timestamp with
+              // registration, so hide it as redundant.
+              const isReception = h.area === 'MesaDePartes' && h.estado === 'EnTramite';
+              return (
+                <li key={i} className="border-l-2 border-line pl-3">
+                  <p className="text-sm font-medium text-ink">
+                    {areaLabel(h.area, procedure.programName)} · {ESTADO_LABELS[h.estado]} · {h.changedByName}
+                  </p>
+                  {!isReception && <p className="text-xs text-ink-soft">{formatDateTime(h.changedAt)}</p>}
+                  {h.comment && <p className="mt-0.5 text-sm text-ink-soft">{h.comment}</p>}
+                </li>
+              );
+            })}
           </ol>
         </Card>
       </div>

@@ -1,4 +1,5 @@
 import type {
+  Area,
   CorrelativeYearItem,
   CreateProcedureResponse,
   Estado,
@@ -7,7 +8,6 @@ import type {
   PresentedDocumentTypeListItem,
   ProcedureDetail,
   ProcedureListItem,
-  ProcedureStatus,
   ProcedureTypeListItem,
   ProgramListItem,
   PublicProcedureResult,
@@ -160,13 +160,13 @@ export const api = {
   },
 
   procedures: {
-    list: (filters: { status?: ProcedureStatus; estado?: Estado; search?: string; year?: number; date?: string }) =>
+    list: (filters: { area?: Area; estado?: Estado; search?: string; year?: number; date?: string }) =>
       get<ProcedureListItem[]>(`/procedures${qs(filters)}`),
     get: (id: number) => get<ProcedureDetail>(`/procedures/${id}`),
     create: (data: Record<string, unknown>) => post<CreateProcedureResponse>('/procedures', data),
     update: (id: number, data: Record<string, unknown>) => put<ProcedureDetail>(`/procedures/${id}`, data),
-    changeStatus: (id: number, status: ProcedureStatus, comment?: string) =>
-      patch<ProcedureDetail>(`/procedures/${id}/status`, { status, comment }),
+    changeStatus: (id: number, area: Area, estado: Estado, comment?: string) =>
+      patch<ProcedureDetail>(`/procedures/${id}/status`, { area, estado, comment }),
     remove: (id: number) => del<void>(`/procedures/${id}`),
   },
 
