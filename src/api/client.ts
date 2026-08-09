@@ -13,6 +13,7 @@ import type {
   PublicProcedureResult,
   Shift,
   StudentListItem,
+  StudentListPage,
   UserListItem,
   UserOption,
   UserProfile,
@@ -150,8 +151,8 @@ export const api = {
   },
 
   students: {
-    list: (search?: string, onlyActive = false, limit?: number) =>
-      get<StudentListItem[]>(`/students${qs({ search, onlyActive, limit })}`),
+    list: (search?: string, onlyActive = false, limit?: number, offset?: number) =>
+      get<StudentListPage>(`/students${qs({ search, onlyActive, limit, offset })}`),
     lookup: (dni: string) => get<StudentListItem | null>(`/students/lookup${qs({ dni })}`),
     create: (data: { idDocumentType: string; dni: string; name: string; programId: number; shift: Shift }) =>
       post<StudentListItem>('/students', data),

@@ -292,6 +292,12 @@ export interface StudentListItem {
   isActive: boolean;
 }
 
+/** One page of /students. `total` is the full match count, ignoring paging. */
+export interface StudentListPage {
+  items: StudentListItem[];
+  total: number;
+}
+
 // ---------------- Procedures ----------------
 
 export interface ProcedureListItem {

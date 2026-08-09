@@ -13,6 +13,7 @@ import { ProcedureDetailPage } from './pages/staff/ProcedureDetailPage';
 import { StudentsPage } from './pages/staff/StudentsPage';
 import { CorrelativesPage } from './pages/staff/CorrelativesPage';
 import { ChangePasswordPage } from './pages/staff/ChangePasswordPage';
+import { ProfilePage } from './pages/staff/ProfilePage';
 import { UsersAdminPage } from './pages/staff/admin/UsersAdminPage';
 import { ProgramsAdminPage } from './pages/staff/admin/ProgramsAdminPage';
 import { ProcedureTypesAdminPage } from './pages/staff/admin/ProcedureTypesAdminPage';
@@ -55,6 +56,7 @@ export default function App() {
             <Route path="alumnos" element={<StudentsPage />} />
             <Route path="correlativos" element={<CorrelativesPage />} />
             <Route path="cambiar-contrasena" element={<ChangePasswordPage />} />
+            <Route path="perfil" element={<ProfilePage />} />
 
             <Route
               path="admin/usuarios"

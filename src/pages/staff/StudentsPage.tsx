@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useDebounceValue } from 'usehooks-ts';
 import { api, ApiError } from '../../api/client';
 import { Button, Card, Checkbox, ErrorNotice, Field, Input, PageHeader, Select } from '../../components/ui';
 import { SHIFT_LABELS, type Shift, type StudentListItem } from '../../types/domain';
@@ -24,21 +25,47 @@ const emptyForm: FormState = {
   isActive: true,
 };
 
+const PAGE_SIZE = 50;
+
 export function StudentsPage() {
   const catalogs = useCatalogs();
   const [students, setStudents] = useState<StudentListItem[]>([]);
+  const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<FormState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // Bumped to force a refetch after a save, without duplicating the effect body.
+  const [reloadKey, setReloadKey] = useState(0);
 
-  function load() {
+  // Typing shouldn't fire one request per keystroke; wait for a pause first.
+  const [debouncedSearch] = useDebounceValue(search, 300);
+
+  // A new search starts over at the first page.
+  useEffect(() => setPage(0), [debouncedSearch]);
+
+  useEffect(() => {
+    let cancelled = false;
     setLoading(true);
-    api.students.list(search || undefined).then(setStudents).finally(() => setLoading(false));
-  }
+    api.students
+      .list(debouncedSearch || undefined, false, PAGE_SIZE, page * PAGE_SIZE)
+      .then((res) => {
+        // A slower earlier request must not overwrite a newer one's results.
+        if (cancelled) return;
+        setStudents(res.items);
+        setTotal(res.total);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearch, page, reloadKey]);
 
-  useEffect(load, [search]);
+  const load = () => setReloadKey((k) => k + 1);
 
   function startCreate() {
     setForm(emptyForm);
@@ -96,7 +123,7 @@ export function StudentsPage() {
       <PageHeader
         eyebrow="Operación"
         title="Alumnos"
-        count={loading ? undefined : students.length}
+        count={loading ? undefined : total}
         actions={<Button onClick={startCreate}>AGREGAR ALUMNO</Button>}
       />
 
@@ -220,6 +247,26 @@ export function StudentsPage() {
           </table>
         )}
       </Card>
+
+      {!loading && total > PAGE_SIZE && (
+        <div className="mt-4 flex items-center justify-between text-sm">
+          <p className="text-ink-soft">
+            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} de {total}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="secondary" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+              Anterior
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={(page + 1) * PAGE_SIZE >= total}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Siguiente
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

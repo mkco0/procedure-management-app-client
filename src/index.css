@@ -44,6 +44,7 @@
   --font-display: "Source Serif 4", Georgia, serif;
   --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-sidebar: "Geist", ui-sans-serif, system-ui, sans-serif;
 
   --breakpoint-xs: 426px;
 }
@@ -58,8 +59,22 @@ body {
   min-height: 100vh;
 }
 
-::selection {
-  background-color: var(--color-gold-100);
+/* Sidebar reveal: each nav link fades/slides in slightly after the previous
+   one when the sidebar opens, instead of the whole list popping in at once.
+   The per-item delay itself is computed in StaffLayout.tsx (a continuous
+   index across both NavSections, since CSS nth-child resets per <nav> and
+   made the Admin section restart its own stagger instead of continuing it)
+   and applied inline; this just defines the opacity/transform to animate.
+   Closing resolves to a 0ms delay for every item, so the sidebar doesn't
+   feel sluggish to dismiss. */
+.nav-stagger nav > a {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 220ms ease-out, transform 220ms ease-out;
+}
+.nav-stagger[data-open='true'] nav > a {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 /* Dense "planilla" table look: hairlines, tight rows, tabular numerals */

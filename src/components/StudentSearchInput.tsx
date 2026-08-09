@@ -47,7 +47,7 @@ export function StudentSearchInput({
       .list(term, false, RESULT_LIMIT)
       .then((found) => {
         if (cancelled) return;
-        setResults(found);
+        setResults(found.items);
         setLoading(false);
       })
       .catch(() => {
