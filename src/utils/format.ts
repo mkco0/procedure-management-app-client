@@ -15,7 +15,17 @@ const LIMA_TZ = 'America/Lima';
 
 export function formatDate(value: string | Date): string {
   const d = typeof value === 'string' ? parseLimaDate(value) : value;
-  return d.toLocaleDateString('es-PE', { year: 'numeric', month: 'short', day: '2-digit', timeZone: LIMA_TZ });
+  return d.toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: LIMA_TZ });
+}
+
+/**
+ * Formats a plain `yyyy-mm-dd` date (the raw value from `<input type="date">`)
+ * as `dd/mm/yyyy`. Pure string reordering — no Date object, no timezone,
+ * since a date-only value has no time-of-day to misinterpret.
+ */
+export function formatIsoDate(value: string): string {
+  const [y, m, d] = value.split('-');
+  return `${d}/${m}/${y}`;
 }
 
 export function formatDateTime(value: string | Date): string {
@@ -28,6 +38,15 @@ export function formatDateTime(value: string | Date): string {
     minute: '2-digit',
     timeZone: LIMA_TZ,
   });
+}
+
+/**
+ * Display-only title case — the underlying data (names, catalog labels)
+ * is stored in ALL CAPS, which this does not change; it only reformats
+ * how it renders here.
+ */
+export function toTitleCase(value: string): string {
+  return value.toLowerCase().replace(/(^|[\s-])\p{L}/gu, (c) => c.toUpperCase());
 }
 
 export function formatCurrency(value: number | null | undefined): string {

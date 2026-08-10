@@ -58,7 +58,6 @@ export function ProgramsAdminPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Administración"
         title="Programas"
         count={loading ? undefined : items.length}
         actions={<Button onClick={() => setForm(emptyForm)}>Nuevo programa</Button>}
@@ -120,7 +119,7 @@ export function ProgramsAdminPage() {
             <tbody>
               {items.map((p) => (
                 <tr key={p.id} className="hover:bg-navy-100/40">
-                  <td className="px-3 py-2 font-mono">{p.code}</td>
+                  <td className="px-3 py-2">{p.code}</td>
                   <td className="px-3 py-2">{p.name}</td>
                   <td className="px-3 py-2 text-ink-soft">{p.oldNames.join(', ')}</td>
                   <td className="px-3 py-2">{p.isActive ? 'Activo' : 'Inactivo'}</td>

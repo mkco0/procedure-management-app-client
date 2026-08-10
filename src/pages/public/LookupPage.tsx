@@ -32,7 +32,7 @@ export function LookupPage() {
   return (
     <div>
       <p className="text-md font-medium uppercase tracking-wider text-gold-700">Consulta pública</p>
-      <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold text-navy-900">
+      <h1 className="text-3xl font-semibold text-navy-900">
         Seguimiento de trámites
       </h1>
       <p className="mt-2 max-w-lg text-md text-ink-soft">
@@ -68,7 +68,7 @@ export function LookupPage() {
             <BookOpen className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="font-[family-name:var(--font-display)] text-base font-semibold text-navy-900">
+            <h2 className="text-base font-semibold text-navy-900">
               Manual del estudiante
             </h2>
             <p className="mt-1 text-sm text-ink-soft">Guía rápida para consultar el estado de tu trámite.</p>

@@ -11,8 +11,10 @@ import {
   type TextareaHTMLAttributes,
 } from 'react';
 import { ESTADO_LABELS, areaLabel, type Area, type Estado } from '../types/domain';
+import { formatIsoDate } from '../utils/format';
 import { useCopyToClipboard } from 'usehooks-ts';
-import { Copy } from 'lucide-react';
+import { Calendar, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function Button({
   variant = 'primary',
@@ -20,7 +22,7 @@ export function Button({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }) {
   const base =
-    'inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-700 cursor-pointer';
+    'inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-700 cursor-pointer';
   const variants: Record<string, string> = {
     primary: 'bg-navy-800 text-white hover:bg-navy-700',
     secondary: 'bg-white text-navy-800 border border-line hover:bg-navy-100',
@@ -46,6 +48,41 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
       {...props}
       className={`w-full rounded-sm border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-navy-700 focus:ring-1 focus:ring-navy-700 ${props.className ?? ''}`}
     />
+  );
+}
+
+/**
+ * `<input type="date">` renders its visible text (mm/dd/yyyy vs dd/mm/yyyy)
+ * according to the browser/OS locale, not the page's `lang` — so it can show
+ * US-style dates regardless of what this app targets. The real input stays
+ * mounted (invisible) for its native picker and keyboard input; a styled
+ * div underneath displays the value pre-formatted as dd/mm/yyyy so what the
+ * user reads never depends on browser locale.
+ */
+export function DateInput({
+  value,
+  onChange,
+  className = '',
+  ...rest
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+} & Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'onChange'>) {
+  return (
+    <div className={`relative ${className}`}>
+      <input
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+        {...rest}
+      />
+      <div className="pointer-events-none flex items-center justify-between gap-2 rounded-sm border border-line bg-surface px-3 py-2 text-sm text-ink">
+        <span>{value ? formatIsoDate(value) : 'dd/mm/aaaa'}</span>
+        <Calendar size={14} className="shrink-0 text-ink-soft" />
+      </div>
+    </div>
   );
 }
 
@@ -218,20 +255,21 @@ export function SearchableSelect({
 
 export function CopyButton({ text }: { text: string }) {
   const [, copy] = useCopyToClipboard();
-  
-  const handleCopy = (text: string) => () => {
-  copy(text)
-    .then(() => {
-      console.log('Copied!', { text })
-    })
-    .catch(error => {
-      console.error('Failed to copy!', error)
-    })
+
+  function handleCopy() {
+    copy(text)
+      .then(() => toast('Copiado al portapapeles.'))
+      .catch((error) => console.error('Failed to copy!', error));
   }
 
   return (
-    <button onClick={handleCopy(text)} className="inline-block ml-2 text-zinc-900 bg-olive-300/50 cursor-pointer p-2.25 rounded-md">
-      <Copy size={17} />
+    <button
+      type="button"
+      onClick={handleCopy}
+      aria-label="Copiar"
+      className="ml-2 inline-flex items-center justify-center rounded-sm p-1 text-ink-soft hover:bg-canvas hover:text-ink"
+    >
+      <Copy size={14} />
     </button>
   );
 }
@@ -271,7 +309,7 @@ export function PageHeader({
           {eyebrow}
           {children}
         </p>}
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-navy-900">
+        <h1 className="text-2xl font-semibold text-navy-900">
           {title}
           {typeof count === 'number' && (
             <span className="ml-3 inline-flex items-center justify-center rounded-full bg-navy-100 px-2.5 py-0.5 align-middle text-sm font-medium text-navy-800">
@@ -285,15 +323,6 @@ export function PageHeader({
   );
 }
 
-const AREA_COLOR_VAR: Record<Area, string> = {
-  MesaDePartes: 'var(--color-area-partes)',
-  SecretariaAcademica: 'var(--color-area-academica)',
-  DireccionGeneral: 'var(--color-area-direccion)',
-  AreaAdministracion: 'var(--color-area-administracion)',
-  UnidadAcademica: 'var(--color-area-unidad-academica)',
-  AreaPrograma: 'var(--color-area-programa)',
-};
-
 /**
  * Which office holds the expediente. `area` is null for statuses with no
  * office (Completado/Rechazado, or Observado with no recorded resume
@@ -302,38 +331,12 @@ const AREA_COLOR_VAR: Record<Area, string> = {
  */
 export function AreaBadge({ area, programName }: { area: Area | null; programName?: string | null }) {
   if (!area) return <span className="text-sm text-ink-soft">—</span>;
-  const color = AREA_COLOR_VAR[area];
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium"
-      style={{ borderColor: color, color }}
-    >
-      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
-      {areaLabel(area, programName)}
-    </span>
-  );
+  return <span className="text-sm text-ink">{areaLabel(area, programName)}</span>;
 }
-
-const ESTADO_COLOR_VAR: Record<Estado, string> = {
-  EnTramite: 'var(--color-estado-tramite)',
-  EnEntrega: 'var(--color-estado-entrega)',
-  Completado: 'var(--color-estado-completado)',
-  Observado: 'var(--color-estado-observado)',
-  Rechazado: 'var(--color-estado-rechazado)',
-};
 
 /** What state the trámite is in, independent of which área holds it. */
 export function EstadoBadge({ estado }: { estado: Estado }) {
-  const color = ESTADO_COLOR_VAR[estado];
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium"
-      style={{ borderColor: color, color }}
-    >
-      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
-      {ESTADO_LABELS[estado]}
-    </span>
-  );
+  return <span className="text-sm text-ink">{ESTADO_LABELS[estado]}</span>;
 }
 
 export function ErrorNotice({ message }: { message: string | null }) {
@@ -348,7 +351,7 @@ export function ErrorNotice({ message }: { message: string | null }) {
 export function EmptyState({ title, description }: { title: string; description?: string }) {
   return (
     <div className="rounded-sm border border-dashed border-line px-6 py-12 text-center">
-      <p className="font-[family-name:var(--font-display)] text-lg text-navy-900">{title}</p>
+      <p className="text-lg text-navy-900">{title}</p>
       {description && <p className="mt-1 text-sm text-ink-soft">{description}</p>}
     </div>
   );

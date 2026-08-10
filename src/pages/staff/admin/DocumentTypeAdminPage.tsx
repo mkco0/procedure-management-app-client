@@ -22,14 +22,12 @@ interface FormState {
 
 export function DocumentTypeAdminPage({
   title,
-  eyebrow,
   numberModeOptions,
   list,
   create,
   update,
 }: {
   title: string;
-  eyebrow: string;
   numberModeOptions: { value: string; label: string }[];
   list: () => Promise<CatalogItem[]>;
   create: (data: { code: string; name: string; numberMode: string; sortOrder: number }) => Promise<CatalogItem>;
@@ -95,7 +93,6 @@ export function DocumentTypeAdminPage({
   return (
     <div>
       <PageHeader
-        eyebrow={eyebrow}
         title={title}
         count={loading ? undefined : items.length}
         actions={<Button onClick={startCreate}>AGREGAR TIPO DE DOCUMENTO</Button>}
@@ -162,10 +159,10 @@ export function DocumentTypeAdminPage({
             <tbody>
               {items.map((item) => (
                 <tr key={item.id} className="hover:bg-navy-100/40">
-                  <td className="px-3 py-2 font-mono">{item.code}</td>
+                  <td className="px-3 py-2">{item.code}</td>
                   <td className="px-3 py-2">{item.name}</td>
                   <td className="px-3 py-2">{modeLabel(item.numberMode)}</td>
-                  <td className="px-3 py-2 font-mono">{item.sortOrder}</td>
+                  <td className="px-3 py-2">{item.sortOrder}</td>
                   <td className="px-3 py-2">{item.isActive ? 'Activo' : 'Inactivo'}</td>
                   <td className="px-3 py-2 text-right">
                     <button onClick={() => startEdit(item)} className="text-md font-medium text-navy-700 hover:underline">

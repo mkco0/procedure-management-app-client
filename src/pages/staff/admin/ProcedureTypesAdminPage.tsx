@@ -51,7 +51,6 @@ export function ProcedureTypesAdminPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Administración"
         title="Tipos de trámite"
         count={loading ? undefined : items.length}
         actions={<Button onClick={() => setForm(emptyForm)}>AGREGAR TIPO DE TRÁMITE</Button>}
@@ -105,7 +104,7 @@ export function ProcedureTypesAdminPage() {
               {items.map((t) => (
                 <tr key={t.id} className="hover:bg-navy-100/40">
                   <td className="px-3 py-2">{t.name}</td>
-                  <td className="px-3 py-2 font-mono">{formatCurrency(t.cost)}</td>
+                  <td className="px-3 py-2">{formatCurrency(t.cost)}</td>
                   <td className="px-3 py-2">{t.isActive ? 'Activo' : 'Inactivo'}</td>
                   <td className="px-3 py-2 text-right">
                     <button

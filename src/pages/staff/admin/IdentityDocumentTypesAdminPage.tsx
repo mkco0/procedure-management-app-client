@@ -4,7 +4,6 @@ import { DocumentTypeAdminPage } from './DocumentTypeAdminPage';
 export function IdentityDocumentTypesAdminPage() {
   return (
     <DocumentTypeAdminPage
-      eyebrow="Administración"
       title="Tipos de documento de identidad"
       numberModeOptions={[
         { value: 'DniDigits', label: '8 dígitos (DNI)' },

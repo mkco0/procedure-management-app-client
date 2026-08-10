@@ -2,14 +2,12 @@
 
 @theme {
   /* ---- Institutional palette ----
-     Warm paper canvas + navy "seal" blue + muted gold accent.
-     Deliberately NOT the generic cream+terracotta AI-default: navy carries
-     the institutional/government-portal weight this brief calls for. */
-  --color-canvas: #f3efe4;
-  --color-surface: #fffdf8;
+     Neutral gray canvas + navy "seal" blue + muted gold accent. */
+  --color-canvas: #f5f6fa;
+  --color-surface: #ffffff;
   --color-ink: #1e2a32;
   --color-ink-soft: #4b5b64;
-  --color-line: #ded6c2;
+  --color-line: #e3e6ec;
 
   --color-navy-950: #0e2036;
   --color-navy-900: #12283f;
@@ -44,13 +42,13 @@
   --font-display: "Source Serif 4", Georgia, serif;
   --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --font-sidebar: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-sidebar: "Open Sans", ui-sans-serif, system-ui, sans-serif;
 
   --breakpoint-xs: 426px;
 }
 
 html {
-  font-family: var(--font-body);
+  font-family: var(--font-sidebar);
   background-color: var(--color-canvas);
   color: var(--color-ink);
 }

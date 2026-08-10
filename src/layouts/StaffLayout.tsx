@@ -2,7 +2,6 @@ import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   FileText,
-  FilePlus,
   UsersRound,
   ListOrdered,
   Tags,
@@ -10,7 +9,6 @@ import {
   FileCheck,
   IdCard,
   ChevronRight,
-  ChevronLeft,
   User,
   LogOut,
 } from 'lucide-react';
@@ -126,13 +124,9 @@ export function StaffLayout() {
             <NavIndicator container={navContainer} />
 
             <NavSection>
-              <NavLink to="/app/tramites" className={navLinkClass} style={staggerStyle()} end>
+              <NavLink to="/app/tramites" className={navLinkClass} style={staggerStyle()}>
                 <FileText size={16} />
-                Ver trámites
-              </NavLink>
-              <NavLink to="/app/tramites/nuevo" className={navLinkClass} style={staggerStyle()}>
-                <FilePlus size={16} />
-                Agregar trámite
+                Trámites
               </NavLink>
               <NavLink to="/app/alumnos" className={navLinkClass} style={staggerStyle()}>
                 <UsersRound size={16} />
@@ -196,16 +190,6 @@ export function StaffLayout() {
           </div>
         </div>
       </aside>
-
-      <button
-        onClick={() => setCollapsed((c) => !c)}
-        aria-label={collapsed ? 'Mostrar barra lateral' : 'Ocultar barra lateral'}
-        title={`${collapsed ? 'Mostrar' : 'Ocultar'} barra lateral (Ctrl/Cmd+B)`}
-        style={{ left: collapsed ? '0.75rem' : 'calc(16rem - 1rem)' }}
-        className="no-print fixed top-16 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-white/40 bg-white/70 text-navy-800 shadow-[0_4px_16px_rgba(18,40,63,0.2)] backdrop-blur-md transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-110 hover:bg-white hover:shadow-[0_4px_20px_rgba(18,40,63,0.3)] active:scale-95"
-      >
-        <ChevronLeft size={15} className={`transition-transform duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${collapsed ? 'rotate-180' : ''}`} />
-      </button>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <main className="print-full-width flex-1 overflow-x-hidden px-8 py-6">

@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { Toaster } from 'sonner';
 import { AuthProvider } from './auth/AuthContext';
 import { RequireAdmin, RequireStaff } from './auth/guards';
 import { PublicLayout } from './layouts/PublicLayout';
@@ -8,8 +9,6 @@ import { LookupPage } from './pages/public/LookupPage';
 import { TramiteStatusPage } from './pages/public/TramiteStatusPage';
 import { LoginPage } from './pages/staff/LoginPage';
 import { ProceduresListPage } from './pages/staff/ProceduresListPage';
-import { NewProcedurePage } from './pages/staff/NewProcedurePage';
-import { ProcedureDetailPage } from './pages/staff/ProcedureDetailPage';
 import { StudentsPage } from './pages/staff/StudentsPage';
 import { CorrelativesPage } from './pages/staff/CorrelativesPage';
 import { ChangePasswordPage } from './pages/staff/ChangePasswordPage';
@@ -30,6 +29,15 @@ function PublicOnlyRoute({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          unstyled: true,
+          classNames: {
+            toast: 'flex items-center gap-2 rounded-sm bg-navy-900 px-4 py-3 text-sm text-white shadow-lg',
+          },
+        }}
+      />
       <AuthProvider>
         <Routes>
           {/* Public */}
@@ -51,8 +59,8 @@ export default function App() {
           >
             <Route index element={<Navigate to="tramites" replace />} />
             <Route path="tramites" element={<ProceduresListPage />} />
-            <Route path="tramites/nuevo" element={<NewProcedurePage />} />
-            <Route path="tramites/:id" element={<ProcedureDetailPage />} />
+            <Route path="tramites/nuevo" element={<ProceduresListPage />} />
+            <Route path="tramites/:id" element={<ProceduresListPage />} />
             <Route path="alumnos" element={<StudentsPage />} />
             <Route path="correlativos" element={<CorrelativesPage />} />
             <Route path="cambiar-contrasena" element={<ChangePasswordPage />} />

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../../api/client';
-import { StatusStepper } from '../../components/StatusStepper';
+import { HistorialList } from '../../components/HistorialList';
 import { AreaBadge, Button, Card, EmptyState, ErrorNotice, EstadoBadge } from '../../components/ui';
 import { describeStatus, type PublicProcedureResult } from '../../types/domain';
 import { formatDateTime } from '../../utils/format';
@@ -70,7 +70,7 @@ export function TramiteStatusPage() {
   return (
     <div>
       <p className="text-md font-medium uppercase tracking-wider text-gold-700">Expediente {result.fileNumber}</p>
-      <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-navy-900">
+      <h1 className="text-2xl font-semibold text-navy-900">
         {result.procedureTypeName}
       </h1>
       <p className="mt-1 text-sm text-ink-soft">
@@ -84,30 +84,10 @@ export function TramiteStatusPage() {
       </div>
 
       <Card className="mt-6 p-6">
-        <StatusStepper status={result.status} resumeStage={result.resumeStage} programName={result.programName} />
-      </Card>
-
-      <Card className="mt-6 p-6">
-        <h2 className="mb-3 font-[family-name:var(--font-display)] text-lg font-semibold text-navy-900">
+        <h2 className="mb-3 text-lg font-semibold text-navy-900">
           Historial
         </h2>
-        <ol className="flex flex-col gap-3">
-          {result.history.map((h, i) => {
-            const { area, estado } = describeStatus(h.status);
-            return (
-              <li key={i} className="border-l-2 border-line pl-4">
-                <div className="flex xs:flex-row flex-col items-center gap-2">
-                  <AreaBadge area={area} programName={result.programName} />
-                  <EstadoBadge estado={estado} />
-                  {h.status !== 'MesaDePartes' && (
-                    <p className="text-sm font-medium text-ink">{formatDateTime(h.changedAt)}</p>
-                  )}
-                </div>
-                {h.comment && <p className="mt-1 text-sm text-ink-soft">{h.comment}</p>}
-              </li>
-            );
-          })}
-        </ol>
+        <HistorialList history={result.history} programName={result.programName} />
       </Card>
 
       <div className="mt-6 flex gap-2 no-print">

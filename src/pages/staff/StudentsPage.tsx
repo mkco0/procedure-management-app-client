@@ -121,7 +121,6 @@ export function StudentsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Operación"
         title="Alumnos"
         count={loading ? undefined : total}
         actions={<Button onClick={startCreate}>AGREGAR ALUMNO</Button>}
@@ -136,7 +135,7 @@ export function StudentsPage() {
 
       {form && (
         <Card className="mb-4 p-6">
-          <h2 className="mb-4 font-[family-name:var(--font-display)] text-base font-semibold text-navy-900">
+          <h2 className="mb-4 text-base font-semibold text-navy-900">
             {form.id === null ? 'Nuevo alumno' : 'Editar alumno'}
           </h2>
           <form onSubmit={onSubmit} className="grid grid-cols-2 gap-4">
@@ -227,7 +226,7 @@ export function StudentsPage() {
             <tbody>
               {students.map((s) => (
                 <tr key={s.id} className="hover:bg-navy-100/40">
-                  <td className="px-3 py-2 font-mono">
+                  <td className="px-3 py-2">
                     {s.idDocumentType} {s.dni}
                   </td>
                   <td className="px-3 py-2">{s.name}</td>

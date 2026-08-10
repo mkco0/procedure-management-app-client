@@ -4,7 +4,6 @@ import { DocumentTypeAdminPage } from './DocumentTypeAdminPage';
 export function PresentedDocumentTypesAdminPage() {
   return (
     <DocumentTypeAdminPage
-      eyebrow="Administración"
       title="Tipos de documento presentado"
       numberModeOptions={[
         { value: 'None', label: 'Sin número' },

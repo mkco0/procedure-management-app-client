@@ -62,7 +62,6 @@ export function UsersAdminPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Administración"
         title="Usuarios"
         count={loading ? undefined : users.length}
         actions={<Button onClick={() => setForm(emptyForm)}>AGREGAR USUARIO</Button>}
@@ -70,7 +69,7 @@ export function UsersAdminPage() {
 
       {form && (
         <Card className="mb-4 p-6">
-          <h2 className="mb-4 font-[family-name:var(--font-display)] text-base font-semibold text-navy-900">
+          <h2 className="mb-4 text-base font-semibold text-navy-900">
             {form.id === null ? 'Nuevo usuario' : 'Editar usuario'}
           </h2>
           <form onSubmit={onSubmit} className="grid grid-cols-2 gap-4">
@@ -145,7 +144,7 @@ export function UsersAdminPage() {
             <tbody>
               {users.map((u) => (
                 <tr key={u.id} className="hover:bg-navy-100/40">
-                  <td className="px-3 py-2 font-mono">{u.dni}</td>
+                  <td className="px-3 py-2">{u.dni}</td>
                   <td className="px-3 py-2">{u.name}</td>
                   <td className="px-3 py-2">{ROLE_LABELS[u.role]}</td>
                   <td className="px-3 py-2">{u.isActive ? 'Activo' : 'Inactivo'}</td>

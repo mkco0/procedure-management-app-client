@@ -36,7 +36,7 @@ export function CorrelativesPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="Operación" title="Correlativos" />
+      <PageHeader title="Correlativos" />
 
       <Card className="overflow-x-auto">
         {loading ? (
@@ -54,8 +54,8 @@ export function CorrelativesPage() {
             <tbody>
               {items.map((item) => (
                 <tr key={item.year} className="hover:bg-navy-100/40">
-                  <td className="px-3 py-2 font-mono">{item.year}</td>
-                  <td className="px-3 py-2 font-mono">
+                  <td className="px-3 py-2">{item.year}</td>
+                  <td className="px-3 py-2">
                     {editingYear === item.year ? (
                       <Input
                         value={nextNumber}
@@ -67,7 +67,7 @@ export function CorrelativesPage() {
                       item.nextNumber
                     )}
                   </td>
-                  <td className="px-3 py-2 font-mono">{item.maxUsed}</td>
+                  <td className="px-3 py-2">{item.maxUsed}</td>
                   <td className="px-3 py-2 text-right">
                     {editingYear === item.year ? (
                       <div className="flex justify-end gap-2">

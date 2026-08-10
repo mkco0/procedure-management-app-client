@@ -19,6 +19,9 @@ export type ProcedureStatus =
   | 'EntregaSecretaria'
   | 'EntregaMesaDePartes'
   | 'EntregaDireccionGeneral'
+  | 'EntregaAreaAdministracion'
+  | 'EntregaUnidadAcademica'
+  | 'EntregaAreaPrograma'
   | 'Completado'
   | 'Observado'
   | 'Rechazado';
@@ -33,16 +36,22 @@ export const STATUS_LABELS: Record<ProcedureStatus, string> = {
   EntregaSecretaria: 'Entrega - Secretaría Académica',
   EntregaMesaDePartes: 'Entrega - Mesa de Partes',
   EntregaDireccionGeneral: 'Entrega - Dirección General',
+  EntregaAreaAdministracion: 'Entrega - Área de Administración',
+  EntregaUnidadAcademica: 'Entrega - Unidad Académica',
+  EntregaAreaPrograma: 'Entrega - Área del programa',
   Completado: 'Completado',
   Observado: 'Observado',
   Rechazado: 'Rechazado',
 };
 
-/** The three parallel hand-over stages that all converge on Completado. */
+/** The parallel hand-over stages — one per área — that all converge on Completado. */
 export const DELIVERY_STATUSES: ProcedureStatus[] = [
   'EntregaSecretaria',
   'EntregaMesaDePartes',
   'EntregaDireccionGeneral',
+  'EntregaAreaAdministracion',
+  'EntregaUnidadAcademica',
+  'EntregaAreaPrograma',
 ];
 
 /** Every status on the regular circuit, in canonical order (used for filters). */
@@ -52,29 +61,6 @@ export const STATUS_ORDER: ProcedureStatus[] = [
   'DireccionGeneral',
   ...DELIVERY_STATUSES,
   'Completado',
-];
-
-/**
- * The circuit as five sequential steps for the stepper. The delivery step
- * groups the three "Entrega - …" statuses, since they're parallel options at
- * the same point of the flow rather than stages that follow one another.
- */
-export interface WorkflowStep {
-  label: string;
-  statuses: ProcedureStatus[];
-}
-
-export const WORKFLOW_STEPS: WorkflowStep[] = [
-  { label: 'Mesa de partes', statuses: ['MesaDePartes'] },
-  // Groups the three occasional derivation áreas with Secretaría Académica —
-  // they're all reached from there and aren't a separate circuit stage.
-  {
-    label: 'Secretaría Académica',
-    statuses: ['SecretariaAcademica', 'AreaAdministracion', 'UnidadAcademica', 'AreaPrograma'],
-  },
-  { label: 'Dirección General', statuses: ['DireccionGeneral'] },
-  { label: 'Entrega', statuses: DELIVERY_STATUSES },
-  { label: 'Completado', statuses: ['Completado'] },
 ];
 
 // ---------------- Área / Estado taxonomy ----------------
@@ -128,18 +114,19 @@ export const ESTADO_LABELS: Record<Estado, string> = {
   Rechazado: 'Rechazado',
 };
 
-/** Each office's pair of statuses — while work is in progress, and once it's ready for hand-over there. */
+/**
+ * Every área's pair of statuses — while work is in progress there, and once
+ * it's ready for hand-over there. Includes the three regular-circuit offices
+ * and the three occasional derivation áreas alike; every área hands over its
+ * own way, so there's no functional difference between them here.
+ */
 export const AREA_STATUSES: { area: Area; enTramite: ProcedureStatus; enEntrega: ProcedureStatus }[] = [
   { area: 'MesaDePartes', enTramite: 'MesaDePartes', enEntrega: 'EntregaMesaDePartes' },
   { area: 'SecretariaAcademica', enTramite: 'SecretariaAcademica', enEntrega: 'EntregaSecretaria' },
   { area: 'DireccionGeneral', enTramite: 'DireccionGeneral', enEntrega: 'EntregaDireccionGeneral' },
-];
-
-/** Occasional derivation áreas — no paired "en entrega" counterpart of their own. */
-export const DERIVATION_AREAS: { area: Area; status: ProcedureStatus }[] = [
-  { area: 'AreaAdministracion', status: 'AreaAdministracion' },
-  { area: 'UnidadAcademica', status: 'UnidadAcademica' },
-  { area: 'AreaPrograma', status: 'AreaPrograma' },
+  { area: 'AreaAdministracion', enTramite: 'AreaAdministracion', enEntrega: 'EntregaAreaAdministracion' },
+  { area: 'UnidadAcademica', enTramite: 'UnidadAcademica', enEntrega: 'EntregaUnidadAcademica' },
+  { area: 'AreaPrograma', enTramite: 'AreaPrograma', enEntrega: 'EntregaAreaPrograma' },
 ];
 
 const AREA_BY_STATUS: Partial<Record<ProcedureStatus, Area>> = {};
@@ -150,17 +137,19 @@ for (const { area, enTramite, enEntrega } of AREA_STATUSES) {
   ESTADO_BY_STATUS[enTramite] = 'EnTramite';
   ESTADO_BY_STATUS[enEntrega] = 'EnEntrega';
 }
-for (const { area, status } of DERIVATION_AREAS) {
-  AREA_BY_STATUS[status] = area;
-  ESTADO_BY_STATUS[status] = 'EnTramite';
-}
 ESTADO_BY_STATUS.Completado = 'Completado';
 ESTADO_BY_STATUS.Observado = 'Observado';
 ESTADO_BY_STATUS.Rechazado = 'Rechazado';
 
-/** True for the six statuses that name a physical office (in-progress or delivery). */
-export function isAreaStatus(status: ProcedureStatus): boolean {
-  return status in AREA_BY_STATUS;
+/**
+ * True only for the six statuses where a trámite is actively being worked on
+ * at an office — moving to one of these is a genuine área change. The three
+ * delivery statuses (Entrega*) also name an office, but reaching one doesn't
+ * move the trámite anywhere: it's the same office switching to "ready for
+ * hand-over", i.e. an estado change, not an área move.
+ */
+export function isInProgressStatus(status: ProcedureStatus): boolean {
+  return ESTADO_BY_STATUS[status] === 'EnTramite';
 }
 
 /**
@@ -317,6 +306,12 @@ export interface ProcedureListItem {
   personInChargeName: string | null;
   status: ProcedureStatus;
   resumeStage: ProcedureStatus | null;
+}
+
+/** One page of /procedures. `total` is the full match count, ignoring paging. */
+export interface ProcedureListPage {
+  items: ProcedureListItem[];
+  total: number;
 }
 
 export interface ProcedureHistoryItem {

@@ -6,7 +6,7 @@ import type {
   LoginResponse,
   PresentedDocumentTypeListItem,
   ProcedureDetail,
-  ProcedureListItem,
+  ProcedureListPage,
   ProcedureStatus,
   ProcedureTypeListItem,
   ProgramListItem,
@@ -161,8 +161,17 @@ export const api = {
   },
 
   procedures: {
-    list: (filters: { status?: ProcedureStatus; estado?: Estado; search?: string; year?: number; date?: string }) =>
-      get<ProcedureListItem[]>(`/procedures${qs(filters)}`),
+    list: (
+      filters: {
+        status?: ProcedureStatus;
+        estado?: Estado;
+        search?: string;
+        year?: number;
+        date?: string;
+        limit?: number;
+        offset?: number;
+      },
+    ) => get<ProcedureListPage>(`/procedures${qs(filters)}`),
     get: (id: number) => get<ProcedureDetail>(`/procedures/${id}`),
     create: (data: Record<string, unknown>) => post<CreateProcedureResponse>('/procedures', data),
     update: (id: number, data: Record<string, unknown>) => put<ProcedureDetail>(`/procedures/${id}`, data),
