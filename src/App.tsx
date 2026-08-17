@@ -9,7 +9,7 @@ import { LookupPage } from './pages/public/LookupPage';
 import { TramiteStatusPage } from './pages/public/TramiteStatusPage';
 import { LoginPage } from './pages/staff/LoginPage';
 import { ProceduresListPage } from './pages/staff/ProceduresListPage';
-import { StudentsPage } from './pages/staff/StudentsPage';
+import { ApplicantsPage } from './pages/staff/ApplicantsPage';
 import { CorrelativesPage } from './pages/staff/CorrelativesPage';
 import { ChangePasswordPage } from './pages/staff/ChangePasswordPage';
 import { ProfilePage } from './pages/staff/ProfilePage';
@@ -61,7 +61,7 @@ export default function App() {
             <Route path="tramites" element={<ProceduresListPage />} />
             <Route path="tramites/nuevo" element={<ProceduresListPage />} />
             <Route path="tramites/:id" element={<ProceduresListPage />} />
-            <Route path="alumnos" element={<StudentsPage />} />
+            <Route path="solicitantes" element={<ApplicantsPage />} />
             <Route path="correlativos" element={<CorrelativesPage />} />
             <Route path="cambiar-contrasena" element={<ChangePasswordPage />} />
             <Route path="perfil" element={<ProfilePage />} />

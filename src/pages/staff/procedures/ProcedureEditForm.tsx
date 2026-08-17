@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api, ApiError } from '../../../api/client';
 import { CopyButton, ErrorNotice, Field, Input, SearchableSelect, Select, Textarea } from '../../../components/ui';
-import { PROCEDURE_TYPE_OTHER_NAME, SHIFT_LABELS, type ProcedureDetail, type Shift } from '../../../types/domain';
+import { APPLICANT_TYPE_LABELS, PROCEDURE_TYPE_OTHER_NAME, SHIFT_LABELS, type ProcedureDetail, type Shift } from '../../../types/domain';
 import type { Catalogs } from '../../../utils/useCatalogs';
 
 interface EditForm {
@@ -25,8 +25,8 @@ function toEditForm(p: ProcedureDetail): EditForm {
     procedureTypeId: String(p.procedureTypeId),
     procedureTypeOther: p.procedureTypeOther ?? '',
     applicantName: p.applicantName,
-    programId: String(p.programId),
-    shift: p.shift,
+    programId: p.programId !== null ? String(p.programId) : '',
+    shift: p.shift ?? 'Day',
     personInChargeId: p.personInChargeId ? String(p.personInChargeId) : '',
     // Blank on purpose: these are "reassign identity" overrides, not the
     // trámite's current identity document.
@@ -70,6 +70,7 @@ export function ProcedureEditForm({
   const selectedPresented = catalogs.presentedDocumentTypes.find((d) => d.code === form.documentType);
   const selectedType = catalogs.procedureTypes.find((t) => String(t.id) === form.procedureTypeId);
   const isOtherType = selectedType?.name === PROCEDURE_TYPE_OTHER_NAME;
+  const isAlumno = procedure.applicantType === 'Alumno';
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -82,8 +83,8 @@ export function ProcedureEditForm({
         procedureTypeId: Number(form.procedureTypeId),
         procedureTypeOther: isOtherType ? form.procedureTypeOther : null,
         applicantName: form.applicantName,
-        programId: Number(form.programId),
-        shift: form.shift,
+        programId: isAlumno ? Number(form.programId) : null,
+        shift: isAlumno ? form.shift : null,
         personInChargeId: form.personInChargeId ? Number(form.personInChargeId) : null,
         idDocumentType: form.idDocumentType || null,
         idDocumentNumber: form.idDocumentNumber || null,
@@ -102,27 +103,34 @@ export function ProcedureEditForm({
 
   return (
     <form id="procedure-edit-form" onSubmit={onSubmit} className="grid grid-cols-2 gap-4">
-      <Field label="Nombres completos">
+      <Field label="Tipo de solicitante">
+        <p className="px-3 py-2 text-sm text-ink-soft">{APPLICANT_TYPE_LABELS[procedure.applicantType]}</p>
+      </Field>
+      <Field label={procedure.applicantType === 'Empresa' ? 'Razón social' : 'Nombres completos'}>
         <Input value={form.applicantName} onChange={(e) => setForm({ ...form, applicantName: e.target.value })} required />
       </Field>
-      <Field label="Programa">
-        <Select value={form.programId} onChange={(e) => setForm({ ...form, programId: e.target.value })} required>
-          {catalogs.programs.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.code} — {p.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
-      <Field label="Turno">
-        <Select value={form.shift} onChange={(e) => setForm({ ...form, shift: e.target.value as Shift })}>
-          {Object.entries(SHIFT_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      {isAlumno && (
+        <>
+          <Field label="Programa">
+            <Select value={form.programId} onChange={(e) => setForm({ ...form, programId: e.target.value })} required>
+              {catalogs.programs.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.code} — {p.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Turno">
+            <Select value={form.shift} onChange={(e) => setForm({ ...form, shift: e.target.value as Shift })}>
+              {Object.entries(SHIFT_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </>
+      )}
       <Field label="Tipo de trámite">
         <SearchableSelect
           value={form.procedureTypeId}
@@ -170,8 +178,8 @@ export function ProcedureEditForm({
       </Field>
 
       <div className="col-span-2 flex items-center gap-1 text-sm text-ink-soft">
-        Documento de identidad actual: <span className="font-medium text-ink">{procedure.studentDni}</span>
-        <CopyButton text={procedure.studentDni} />
+        Documento de identidad actual: <span className="font-medium text-ink">{procedure.applicantDni}</span>
+        <CopyButton text={procedure.applicantDni} />
       </div>
       <Field label="Reasignar identidad (opcional)" hint="Solo si necesita corregir el DNI del solicitante.">
         <div className="flex gap-2">

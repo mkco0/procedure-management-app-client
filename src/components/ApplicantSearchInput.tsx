@@ -1,13 +1,14 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { useDebounceValue } from 'usehooks-ts';
 import { api } from '../api/client';
-import type { StudentListItem } from '../types/domain';
+import { APPLICANT_TYPE_LABELS, type ApplicantListItem, type ApplicantType } from '../types/domain';
 
 const MIN_QUERY_LENGTH = 2;
 const RESULT_LIMIT = 20;
 
-/** Free-text input for applicantName that offers matching students as you type. */
-export function StudentSearchInput({
+/** Free-text input for applicantName that offers matching applicants (scoped to `type`) as you type. */
+export function ApplicantSearchInput({
+  type,
   value,
   onChange,
   onSelect,
@@ -15,9 +16,10 @@ export function StudentSearchInput({
   disabled,
   className = '',
 }: {
+  type: ApplicantType;
   value: string;
   onChange: (name: string) => void;
-  onSelect: (student: StudentListItem) => void;
+  onSelect: (applicant: ApplicantListItem) => void;
   required?: boolean;
   disabled?: boolean;
   className?: string;
@@ -30,7 +32,7 @@ export function StudentSearchInput({
   const typingRef = useRef(false);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
-  const [results, setResults] = useState<StudentListItem[]>([]);
+  const [results, setResults] = useState<ApplicantListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [debouncedValue] = useDebounceValue(value, 250);
 
@@ -43,8 +45,8 @@ export function StudentSearchInput({
     }
     let cancelled = false;
     setLoading(true);
-    api.students
-      .list(term, false, RESULT_LIMIT)
+    api.applicants
+      .list(type, term, false, RESULT_LIMIT)
       .then((found) => {
         if (cancelled) return;
         setResults(found.items);
@@ -58,7 +60,7 @@ export function StudentSearchInput({
     return () => {
       cancelled = true;
     };
-  }, [debouncedValue]);
+  }, [debouncedValue, type]);
 
   useEffect(() => {
     if (!open) return;
@@ -75,9 +77,9 @@ export function StudentSearchInput({
     setActive(0);
   }, [results]);
 
-  function pick(student: StudentListItem) {
+  function pick(applicant: ApplicantListItem) {
     typingRef.current = false;
-    onSelect(student);
+    onSelect(applicant);
     setOpen(false);
   }
 
@@ -138,10 +140,12 @@ export function StudentSearchInput({
           {loading ? (
             <li className="px-3 py-2 text-sm text-ink-soft">Buscando…</li>
           ) : results.length === 0 ? (
-            <li className="px-3 py-2 text-sm text-ink-soft">Sin resultados — se creará un alumno nuevo.</li>
+            <li className="px-3 py-2 text-sm text-ink-soft">
+              Sin resultados — se creará un nuevo {APPLICANT_TYPE_LABELS[type].toLowerCase()}.
+            </li>
           ) : (
-            results.map((s, i) => (
-              <li key={s.id} role="option" aria-selected={false}>
+            results.map((a, i) => (
+              <li key={a.id} role="option" aria-selected={false}>
                 <button
                   type="button"
                   className={`block w-full px-3 py-2 text-left text-sm ${
@@ -149,9 +153,10 @@ export function StudentSearchInput({
                   }`}
                   onMouseDown={(e) => e.preventDefault()}
                   onMouseEnter={() => setActive(i)}
-                  onClick={() => pick(s)}
+                  onClick={() => pick(a)}
                 >
-                  {s.name} · {s.dni} · {s.programCode}
+                  {a.name} · {a.dni}
+                  {a.programCode ? ` · ${a.programCode}` : ''}
                 </button>
               </li>
             ))

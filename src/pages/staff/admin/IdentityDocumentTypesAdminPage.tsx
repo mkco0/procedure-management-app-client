@@ -8,6 +8,7 @@ export function IdentityDocumentTypesAdminPage() {
       numberModeOptions={[
         { value: 'DniDigits', label: '8 dígitos (DNI)' },
         { value: 'Alphanumeric', label: 'Alfanumérico' },
+        { value: 'RucDigits', label: '11 dígitos (RUC)' },
       ]}
       list={() => api.identityDocumentTypes.list()}
       create={(data) => api.identityDocumentTypes.create(data)}

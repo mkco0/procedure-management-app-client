@@ -5,9 +5,25 @@ export type UserRole = 'Admin' | 'Secretary';
 
 export type Shift = 'Day' | 'Night';
 
+/**
+ * Who is filing the trámite. Alumno is the only type tied to an academic
+ * Program/Shift — the other four leave those fields null/hidden.
+ */
+export type ApplicantType = 'Alumno' | 'Docente' | 'Directivo' | 'Administrativo' | 'Empresa';
+
+export const APPLICANT_TYPE_LABELS: Record<ApplicantType, string> = {
+  Alumno: 'Alumno',
+  Docente: 'Docente',
+  Directivo: 'Directivo',
+  Administrativo: 'Administrativo',
+  Empresa: 'Empresa',
+};
+
+export const APPLICANT_TYPES: ApplicantType[] = ['Alumno', 'Docente', 'Directivo', 'Administrativo', 'Empresa'];
+
 export type PresentedNumberMode = 'None' | 'Identifier' | 'Description';
 
-export type IdentityNumberMode = 'DniDigits' | 'Alphanumeric';
+export type IdentityNumberMode = 'DniDigits' | 'Alphanumeric' | 'RucDigits';
 
 export type ProcedureStatus =
   | 'MesaDePartes'
@@ -182,6 +198,7 @@ export const SHIFT_SHORT: Record<Shift, string> = {
 
 export const FIELD_LIMITS = {
   staffDniLength: 8,
+  rucLength: 11,
   studentDocNumberMax: 20,
   documentTypeCodeMax: 10,
   documentTypeNameMax: 100,
@@ -266,24 +283,27 @@ export interface IdentityDocumentTypeListItem {
   sortOrder: number;
 }
 
-// ---------------- Students ----------------
+// ---------------- Applicants (Solicitantes) ----------------
 
-export interface StudentListItem {
+export interface ApplicantListItem {
   id: number;
+  type: ApplicantType;
   idDocumentType: string;
   dni: string;
   name: string;
-  programId: number;
-  programCode: string;
-  // Null only for historical students bulk-imported without a recorded
-  // turno; any new trámite registered for them fills it in.
+  // Only set for Type === 'Alumno'; null for every other applicant type.
+  programId: number | null;
+  programCode: string | null;
+  // Null for a non-Alumno applicant, or for historical students
+  // bulk-imported without a recorded turno; any new trámite registered
+  // for an Alumno without one fills it in.
   shift: Shift | null;
   isActive: boolean;
 }
 
-/** One page of /students. `total` is the full match count, ignoring paging. */
-export interface StudentListPage {
-  items: StudentListItem[];
+/** One page of /applicants. `total` is the full match count, ignoring paging. */
+export interface ApplicantListPage {
+  items: ApplicantListItem[];
   total: number;
 }
 
@@ -297,11 +317,12 @@ export interface ProcedureListItem {
   documentType: string;
   documentNumber: string | null;
   registeredAt: string;
+  applicantType: ApplicantType;
   applicantName: string;
   procedureTypeName: string;
-  programCode: string;
-  programName: string;
-  shift: Shift;
+  programCode: string | null;
+  programName: string | null;
+  shift: Shift | null;
   registeredByName: string;
   personInChargeName: string | null;
   status: ProcedureStatus;
@@ -331,12 +352,13 @@ export interface ProcedureDetail {
   procedureTypeId: number;
   procedureTypeName: string;
   procedureTypeOther: string | null;
+  applicantType: ApplicantType;
   applicantName: string;
-  studentDni: string;
-  programId: number;
-  programCode: string;
-  programName: string;
-  shift: Shift;
+  applicantDni: string;
+  programId: number | null;
+  programCode: string | null;
+  programName: string | null;
+  shift: Shift | null;
   personInChargeId: number | null;
   personInChargeName: string | null;
   status: ProcedureStatus;
@@ -370,10 +392,11 @@ export interface PublicHistoryItem {
 
 export interface PublicProcedureResult {
   fileNumber: string;
+  applicantType: ApplicantType;
   applicantName: string;
   procedureTypeName: string;
-  programCode: string;
-  programName: string;
+  programCode: string | null;
+  programName: string | null;
   status: ProcedureStatus;
   resumeStage: ProcedureStatus | null;
   registeredAt: string;

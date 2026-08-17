@@ -3,7 +3,7 @@ import { api, ApiError } from '../../../api/client';
 import { HistorialList } from '../../../components/HistorialList';
 import { Modal } from '../../../components/Modal';
 import { AreaBadge, Button, Card, CopyButton, EstadoBadge } from '../../../components/ui';
-import { describeStatus, type ProcedureDetail } from '../../../types/domain';
+import { APPLICANT_TYPE_LABELS, describeStatus, type ProcedureDetail } from '../../../types/domain';
 import { formatDateTime, toTitleCase } from '../../../utils/format';
 import { AdvanceStatusForm } from './AdvanceStatusForm';
 
@@ -97,12 +97,13 @@ export function ProcedureDetailModal({
                     label="Estado"
                     value={<EstadoBadge estado={describeStatus(procedure.status, procedure.resumeStage).estado} />}
                   />
-                  <Row label="Documento de identidad" value={procedure.studentDni}>
-                    <CopyButton text={procedure.studentDni} />
+                  <Row label="Documento de identidad" value={procedure.applicantDni}>
+                    <CopyButton text={procedure.applicantDni} />
                   </Row>
+                  <Row label="Tipo de solicitante" value={APPLICANT_TYPE_LABELS[procedure.applicantType]} />
                   <Row label="Solicitante" value={toTitleCase(procedure.applicantName)} />
-                  <Row label="Programa" value={procedure.programName} />
-                  <Row label="Turno" value={procedure.shift === 'Day' ? 'Diurno' : 'Nocturno'} />
+                  {procedure.programName && <Row label="Programa" value={procedure.programName} />}
+                  {procedure.shift && <Row label="Turno" value={procedure.shift === 'Day' ? 'Diurno' : 'Nocturno'} />}
                   <Row
                     label="Documento presentado"
                     value={procedure.documentType + (procedure.documentNumber ? ` (${procedure.documentNumber})` : '')}

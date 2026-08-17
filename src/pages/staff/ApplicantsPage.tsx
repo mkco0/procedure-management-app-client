@@ -2,11 +2,19 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useDebounceValue } from 'usehooks-ts';
 import { api, ApiError } from '../../api/client';
 import { Button, Card, Checkbox, ErrorNotice, Field, Input, PageHeader, Select } from '../../components/ui';
-import { SHIFT_LABELS, type Shift, type StudentListItem } from '../../types/domain';
+import {
+  APPLICANT_TYPE_LABELS,
+  APPLICANT_TYPES,
+  SHIFT_LABELS,
+  type ApplicantListItem,
+  type ApplicantType,
+  type Shift,
+} from '../../types/domain';
 import { useCatalogs } from '../../utils/useCatalogs';
 
 interface FormState {
   id: number | null;
+  type: ApplicantType;
   idDocumentType: string;
   dni: string;
   name: string;
@@ -15,21 +23,25 @@ interface FormState {
   isActive: boolean;
 }
 
-const emptyForm: FormState = {
-  id: null,
-  idDocumentType: '',
-  dni: '',
-  name: '',
-  programId: '',
-  shift: 'Day',
-  isActive: true,
-};
+function emptyForm(type: ApplicantType): FormState {
+  return {
+    id: null,
+    type,
+    idDocumentType: '',
+    dni: '',
+    name: '',
+    programId: '',
+    shift: 'Day',
+    isActive: true,
+  };
+}
 
 const PAGE_SIZE = 50;
 
-export function StudentsPage() {
+export function ApplicantsPage() {
   const catalogs = useCatalogs();
-  const [students, setStudents] = useState<StudentListItem[]>([]);
+  const [typeFilter, setTypeFilter] = useState<ApplicantType | ''>('Alumno');
+  const [applicants, setApplicants] = useState<ApplicantListItem[]>([]);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
@@ -43,18 +55,18 @@ export function StudentsPage() {
   // Typing shouldn't fire one request per keystroke; wait for a pause first.
   const [debouncedSearch] = useDebounceValue(search, 300);
 
-  // A new search starts over at the first page.
-  useEffect(() => setPage(0), [debouncedSearch]);
+  // A new search or type filter starts over at the first page.
+  useEffect(() => setPage(0), [debouncedSearch, typeFilter]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    api.students
-      .list(debouncedSearch || undefined, false, PAGE_SIZE, page * PAGE_SIZE)
+    api.applicants
+      .list(typeFilter || undefined, debouncedSearch || undefined, false, PAGE_SIZE, page * PAGE_SIZE)
       .then((res) => {
         // A slower earlier request must not overwrite a newer one's results.
         if (cancelled) return;
-        setStudents(res.items);
+        setApplicants(res.items);
         setTotal(res.total);
       })
       .finally(() => {
@@ -63,24 +75,25 @@ export function StudentsPage() {
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearch, page, reloadKey]);
+  }, [typeFilter, debouncedSearch, page, reloadKey]);
 
   const load = () => setReloadKey((k) => k + 1);
 
   function startCreate() {
-    setForm(emptyForm);
+    setForm(emptyForm(typeFilter || 'Alumno'));
     setError(null);
   }
 
-  function startEdit(s: StudentListItem) {
+  function startEdit(a: ApplicantListItem) {
     setForm({
-      id: s.id,
-      idDocumentType: s.idDocumentType,
-      dni: s.dni,
-      name: s.name,
-      programId: String(s.programId),
-      shift: s.shift ?? 'Day',
-      isActive: s.isActive,
+      id: a.id,
+      type: a.type,
+      idDocumentType: a.idDocumentType,
+      dni: a.dni,
+      name: a.name,
+      programId: a.programId !== null ? String(a.programId) : '',
+      shift: a.shift ?? 'Day',
+      isActive: a.isActive,
     });
     setError(null);
   }
@@ -90,55 +103,91 @@ export function StudentsPage() {
     if (!form) return;
     setSaving(true);
     setError(null);
+    const isAlumno = form.type === 'Alumno';
     try {
       if (form.id === null) {
-        await api.students.create({
+        await api.applicants.create({
+          type: form.type,
           idDocumentType: form.idDocumentType,
           dni: form.dni,
           name: form.name,
-          programId: Number(form.programId),
-          shift: form.shift,
+          programId: isAlumno ? Number(form.programId) : null,
+          shift: isAlumno ? form.shift : null,
         });
       } else {
-        await api.students.update(form.id, {
+        await api.applicants.update(form.id, {
           idDocumentType: form.idDocumentType,
           dni: form.dni,
           name: form.name,
-          programId: Number(form.programId),
-          shift: form.shift,
+          programId: isAlumno ? Number(form.programId) : null,
+          shift: isAlumno ? form.shift : null,
           isActive: form.isActive,
         });
       }
       setForm(null);
       load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo guardar el alumno.');
+      setError(err instanceof ApiError ? err.message : 'No se pudo guardar el solicitante.');
     } finally {
       setSaving(false);
     }
   }
 
+  const isAlumnoForm = form?.type === 'Alumno';
+  const nameLabel = form?.type === 'Empresa' ? 'Razón social' : 'Nombres completos';
+
   return (
     <div>
       <PageHeader
-        title="Alumnos"
+        title="Solicitantes"
         count={loading ? undefined : total}
-        actions={<Button onClick={startCreate}>AGREGAR ALUMNO</Button>}
+        actions={<Button onClick={startCreate}>AGREGAR SOLICITANTE</Button>}
       />
 
-      <Input
-        placeholder="Buscar"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="mb-4 max-w-xs"
-      />
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value as ApplicantType | '')}
+          className="max-w-xs"
+        >
+          <option value="">Todos los tipos</option>
+          {APPLICANT_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {APPLICANT_TYPE_LABELS[t]}
+            </option>
+          ))}
+        </Select>
+        <Input
+          placeholder="Buscar"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+      </div>
 
       {form && (
         <Card className="mb-4 p-6">
           <h2 className="mb-4 text-base font-semibold text-navy-900">
-            {form.id === null ? 'Nuevo alumno' : 'Editar alumno'}
+            {form.id === null ? 'Nuevo solicitante' : 'Editar solicitante'}
           </h2>
           <form onSubmit={onSubmit} className="grid grid-cols-2 gap-4">
+            <Field label="Tipo de solicitante">
+              {form.id === null ? (
+                <Select
+                  value={form.type}
+                  onChange={(e) => setForm({ ...form, type: e.target.value as ApplicantType })}
+                  required
+                >
+                  {APPLICANT_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {APPLICANT_TYPE_LABELS[t]}
+                    </option>
+                  ))}
+                </Select>
+              ) : (
+                <p className="px-3 py-2 text-sm text-ink-soft">{APPLICANT_TYPE_LABELS[form.type]}</p>
+              )}
+            </Field>
             <Field label="Tipo de documento">
               <Select
                 value={form.idDocumentType}
@@ -160,28 +209,32 @@ export function StudentsPage() {
                 required
               />
             </Field>
-            <Field label="Nombres completos">
+            <Field label={nameLabel}>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             </Field>
-            <Field label="Programa">
-              <Select value={form.programId} onChange={(e) => setForm({ ...form, programId: e.target.value })} required>
-                <option value="">Seleccione…</option>
-                {catalogs.programs.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.code} — {p.name}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Turno">
-              <Select value={form.shift} onChange={(e) => setForm({ ...form, shift: e.target.value as Shift })}>
-                {Object.entries(SHIFT_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+            {isAlumnoForm && (
+              <>
+                <Field label="Programa">
+                  <Select value={form.programId} onChange={(e) => setForm({ ...form, programId: e.target.value })} required>
+                    <option value="">Seleccione…</option>
+                    {catalogs.programs.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.code} — {p.name}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Turno">
+                  <Select value={form.shift} onChange={(e) => setForm({ ...form, shift: e.target.value as Shift })}>
+                    {Object.entries(SHIFT_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              </>
+            )}
             {form.id !== null && (
               <div className="flex items-end">
                 <Checkbox
@@ -215,8 +268,9 @@ export function StudentsPage() {
           <table className="sheet-table w-full text-left text-sm">
             <thead>
               <tr className="bg-navy-100 text-xs uppercase tracking-wide text-navy-900">
+                <th className="px-3 py-2 font-medium">Tipo</th>
                 <th className="px-3 py-2 font-medium">Documento</th>
-                <th className="px-3 py-2 font-medium">Nombres</th>
+                <th className="px-3 py-2 font-medium">Nombres / Razón social</th>
                 <th className="px-3 py-2 font-medium">Programa</th>
                 <th className="px-3 py-2 font-medium">Turno</th>
                 <th className="px-3 py-2 font-medium">Estado</th>
@@ -224,19 +278,20 @@ export function StudentsPage() {
               </tr>
             </thead>
             <tbody>
-              {students.map((s) => (
-                <tr key={s.id} className="hover:bg-navy-100/40">
+              {applicants.map((a) => (
+                <tr key={a.id} className="hover:bg-navy-100/40">
+                  <td className="px-3 py-2">{APPLICANT_TYPE_LABELS[a.type]}</td>
                   <td className="px-3 py-2">
-                    {s.idDocumentType} {s.dni}
+                    {a.idDocumentType} {a.dni}
                   </td>
-                  <td className="px-3 py-2">{s.name}</td>
-                  <td className="px-3 py-2">{s.programCode}</td>
+                  <td className="px-3 py-2">{a.name}</td>
+                  <td className="px-3 py-2">{a.programCode ?? <span className="text-ink-soft">—</span>}</td>
                   <td className="px-3 py-2">
-                    {s.shift ? SHIFT_LABELS[s.shift] : <span className="text-ink-soft">Sin turno</span>}
+                    {a.shift ? SHIFT_LABELS[a.shift] : <span className="text-ink-soft">—</span>}
                   </td>
-                  <td className="px-3 py-2">{s.isActive ? 'Activo' : 'Inactivo'}</td>
+                  <td className="px-3 py-2">{a.isActive ? 'Activo' : 'Inactivo'}</td>
                   <td className="px-3 py-2 text-right">
-                    <button onClick={() => startEdit(s)} className="text-md font-medium text-navy-700 hover:underline">
+                    <button onClick={() => startEdit(a)} className="text-md font-medium text-navy-700 hover:underline">
                       Editar
                     </button>
                   </td>

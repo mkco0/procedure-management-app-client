@@ -128,9 +128,9 @@ export function StaffLayout() {
                 <FileText size={16} />
                 Trámites
               </NavLink>
-              <NavLink to="/app/alumnos" className={navLinkClass} style={staggerStyle()}>
+              <NavLink to="/app/solicitantes" className={navLinkClass} style={staggerStyle()}>
                 <UsersRound size={16} />
-                Alumnos
+                Solicitantes
               </NavLink>
               <NavLink to="/app/correlativos" className={navLinkClass} style={staggerStyle()}>
                 <ListOrdered size={16} />

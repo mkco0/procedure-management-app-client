@@ -3,8 +3,17 @@ import { toast } from 'sonner';
 import { api, ApiError } from '../../../api/client';
 import { Modal } from '../../../components/Modal';
 import { Button, Card, ErrorNotice, Field, Input, SearchableSelect, Select, Textarea } from '../../../components/ui';
-import { StudentSearchInput } from '../../../components/StudentSearchInput';
-import { FIELD_LIMITS, PROCEDURE_TYPE_OTHER_NAME, SHIFT_LABELS, type Shift, type StudentListItem } from '../../../types/domain';
+import { ApplicantSearchInput } from '../../../components/ApplicantSearchInput';
+import {
+  APPLICANT_TYPE_LABELS,
+  APPLICANT_TYPES,
+  FIELD_LIMITS,
+  PROCEDURE_TYPE_OTHER_NAME,
+  SHIFT_LABELS,
+  type ApplicantListItem,
+  type ApplicantType,
+  type Shift,
+} from '../../../types/domain';
 import { formatCurrency, todayLimaISODate } from '../../../utils/format';
 import type { Catalogs } from '../../../utils/useCatalogs';
 
@@ -17,6 +26,7 @@ interface Draft {
   documentNumber: string;
   procedureTypeId: string;
   procedureTypeOther: string;
+  applicantType: ApplicantType;
   applicantName: string;
   programId: string;
   shift: Shift;
@@ -34,6 +44,7 @@ function emptyDraft(): Draft {
     documentNumber: '',
     procedureTypeId: '',
     procedureTypeOther: '',
+    applicantType: 'Alumno',
     applicantName: '',
     programId: '',
     shift: 'Day',
@@ -59,8 +70,8 @@ export function NewProcedureModal({
     const raw = sessionStorage.getItem(DRAFT_KEY);
     return raw ? { ...emptyDraft(), ...JSON.parse(raw) } : emptyDraft();
   });
-  const [studentStatus, setStudentStatus] = useState<'idle' | 'checking' | 'found' | 'new'>('idle');
-  const [foundStudent, setFoundStudent] = useState<StudentListItem | null>(null);
+  const [applicantStatus, setApplicantStatus] = useState<'idle' | 'checking' | 'found' | 'new'>('idle');
+  const [foundApplicant, setFoundApplicant] = useState<ApplicantListItem | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -75,48 +86,63 @@ export function NewProcedureModal({
   function clearForm() {
     sessionStorage.removeItem(DRAFT_KEY);
     setDraft(emptyDraft());
-    setStudentStatus('idle');
-    setFoundStudent(null);
+    setApplicantStatus('idle');
+    setFoundApplicant(null);
     setError(null);
   }
 
+  const isAlumno = draft.applicantType === 'Alumno';
+  const nameLabel = draft.applicantType === 'Empresa' ? 'Razón social' : 'Nombres completos';
   const selectedPresented = catalogs.presentedDocumentTypes.find((d) => d.code === draft.documentType);
   const selectedProcedureType = catalogs.procedureTypes.find((t) => String(t.id) === draft.procedureTypeId);
   const isOtherProcedureType = selectedProcedureType?.name === PROCEDURE_TYPE_OTHER_NAME;
 
-  async function checkStudent() {
+  function onApplicantTypeChange(type: ApplicantType) {
+    setDraft((d) => ({
+      ...d,
+      applicantType: type,
+      applicantName: '',
+      idDocumentType: '',
+      idDocumentNumber: '',
+      programId: '',
+    }));
+    setApplicantStatus('idle');
+    setFoundApplicant(null);
+  }
+
+  async function checkApplicant() {
     const value = draft.idDocumentNumber.trim();
     if (!value || !draft.idDocumentType) return;
-    setStudentStatus('checking');
+    setApplicantStatus('checking');
     try {
-      const found = await api.students.lookup(value);
-      setFoundStudent(found);
+      const found = await api.applicants.lookup(draft.applicantType, value);
+      setFoundApplicant(found);
       if (found) {
-        setStudentStatus('found');
+        setApplicantStatus('found');
         setDraft((d) => ({
           ...d,
           applicantName: found.name,
-          programId: String(found.programId),
+          programId: found.programId !== null ? String(found.programId) : '',
           shift: found.shift ?? d.shift,
         }));
       } else {
-        setStudentStatus('new');
+        setApplicantStatus('new');
       }
     } catch {
-      setStudentStatus('idle');
+      setApplicantStatus('idle');
     }
   }
 
-  function pickStudent(s: StudentListItem) {
-    setFoundStudent(s);
-    setStudentStatus('found');
+  function pickApplicant(a: ApplicantListItem) {
+    setFoundApplicant(a);
+    setApplicantStatus('found');
     setDraft((d) => ({
       ...d,
-      applicantName: s.name,
-      idDocumentType: s.idDocumentType,
-      idDocumentNumber: s.dni,
-      programId: String(s.programId),
-      shift: s.shift ?? d.shift,
+      applicantName: a.name,
+      idDocumentType: a.idDocumentType,
+      idDocumentNumber: a.dni,
+      programId: a.programId !== null ? String(a.programId) : '',
+      shift: a.shift ?? d.shift,
     }));
   }
 
@@ -132,9 +158,10 @@ export function NewProcedureModal({
         documentNumber: draft.documentNumber || null,
         procedureTypeId: Number(draft.procedureTypeId),
         procedureTypeOther: isOtherProcedureType ? draft.procedureTypeOther : null,
+        applicantType: draft.applicantType,
         applicantName: draft.applicantName,
-        programId: Number(draft.programId),
-        shift: draft.shift,
+        programId: isAlumno ? Number(draft.programId) : null,
+        shift: isAlumno ? draft.shift : null,
         personInChargeId: draft.personInChargeId ? Number(draft.personInChargeId) : null,
         idDocumentType: draft.idDocumentType,
         idDocumentNumber: draft.idDocumentNumber,
@@ -180,6 +207,19 @@ export function NewProcedureModal({
           <Card className="mt-4 p-6">
             <h2 className="mb-4 text-base font-semibold text-navy-900">Identidad del solicitante</h2>
             <div className="grid grid-cols-2 gap-4">
+              <Field label="Tipo de solicitante">
+                <Select
+                  value={draft.applicantType}
+                  onChange={(e) => onApplicantTypeChange(e.target.value as ApplicantType)}
+                  required
+                >
+                  {APPLICANT_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {APPLICANT_TYPE_LABELS[t]}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
               <Field label="Tipo de documento">
                 <Select value={draft.idDocumentType} onChange={(e) => set('idDocumentType', e.target.value)} required>
                   <option value="">Seleccione…</option>
@@ -194,62 +234,69 @@ export function NewProcedureModal({
                 <Input
                   value={draft.idDocumentNumber}
                   onChange={(e) => set('idDocumentNumber', e.target.value)}
-                  onBlur={checkStudent}
+                  onBlur={checkApplicant}
                   maxLength={FIELD_LIMITS.studentDocNumberMax}
                   required
                 />
               </Field>
             </div>
-            {studentStatus === 'checking' && <p className="mt-2 text-xs text-ink-soft">Buscando alumno…</p>}
-            {studentStatus === 'found' && (
+            {applicantStatus === 'checking' && <p className="mt-2 text-xs text-ink-soft">Buscando…</p>}
+            {applicantStatus === 'found' && (
               <p className="mt-2 text-xs font-medium text-[color:var(--color-estado-completado)]">
-                Alumno encontrado — datos completados automáticamente.
+                {APPLICANT_TYPE_LABELS[draft.applicantType]} encontrado — datos completados automáticamente.
               </p>
             )}
-            {studentStatus === 'found' && foundStudent && !foundStudent.shift && (
+            {applicantStatus === 'found' && foundApplicant && isAlumno && !foundApplicant.shift && (
               <p className="mt-2 text-xs text-gold-700">
                 Este alumno no tiene un turno registrado — verifique que el turno seleccionado sea correcto.
               </p>
             )}
-            {studentStatus === 'new' && (
-              <p className="mt-2 text-xs text-gold-700">No existe un alumno con ese documento — se creará al guardar.</p>
+            {applicantStatus === 'new' && (
+              <p className="mt-2 text-xs text-gold-700">
+                No existe un {APPLICANT_TYPE_LABELS[draft.applicantType].toLowerCase()} con ese documento — se creará al guardar.
+              </p>
             )}
           </Card>
 
           <Card className="mt-4 p-6">
             <h2 className="mb-4 text-base font-semibold text-navy-900">Datos del solicitante</h2>
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Nombres completos">
-                <StudentSearchInput
+              <Field label={nameLabel}>
+                <ApplicantSearchInput
+                  type={draft.applicantType}
                   value={draft.applicantName}
                   onChange={(name) => set('applicantName', name)}
-                  onSelect={pickStudent}
+                  onSelect={pickApplicant}
                   required
                 />
               </Field>
-              <Field label="Programa">
-                <SearchableSelect
-                  value={draft.programId}
-                  onChange={(v) => set('programId', v)}
-                  required
-                  options={catalogs.programs.flatMap((p) => [
-                    { value: String(p.id), label: `${p.code} — ${p.name}` },
-                    ...p.oldNames.map((oldName) => ({
-                      value: String(p.id),
-                      label: `${p.code} — ${oldName} (nombre anterior)`,
-                    })),
-                  ])}
-                />
-              </Field>
-              <Field label="Turno">
-                <Select value={draft.shift} onChange={(e) => set('shift', e.target.value as Shift)} required>
-                  {Object.entries(SHIFT_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
+              {isAlumno && (
+                <>
+                  <Field label="Programa">
+                    <SearchableSelect
+                      value={draft.programId}
+                      onChange={(v) => set('programId', v)}
+                      required
+                      options={catalogs.programs.flatMap((p) => [
+                        { value: String(p.id), label: `${p.code} — ${p.name}` },
+                        ...p.oldNames.map((oldName) => ({
+                          value: String(p.id),
+                          label: `${p.code} — ${oldName} (nombre anterior)`,
+                        })),
+                      ])}
+                    />
+                  </Field>
+                  <Field label="Turno">
+                    <Select value={draft.shift} onChange={(e) => set('shift', e.target.value as Shift)} required>
+                      {Object.entries(SHIFT_LABELS).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </Select>
+                  </Field>
+                </>
+              )}
             </div>
           </Card>
 

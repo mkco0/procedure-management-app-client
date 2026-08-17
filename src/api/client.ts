@@ -1,4 +1,7 @@
 import type {
+  ApplicantListItem,
+  ApplicantListPage,
+  ApplicantType,
   CorrelativeYearItem,
   CreateProcedureResponse,
   Estado,
@@ -12,12 +15,41 @@ import type {
   ProgramListItem,
   PublicProcedureResult,
   Shift,
-  StudentListItem,
-  StudentListPage,
   UserListItem,
   UserOption,
   UserProfile,
 } from '../types/domain';
+
+interface CreateProcedurePayload {
+  fileNumber: string;
+  registeredAt: string | null;
+  documentType: string;
+  documentNumber: string | null;
+  procedureTypeId: number;
+  procedureTypeOther: string | null;
+  applicantType: ApplicantType;
+  applicantName: string;
+  programId: number | null;
+  shift: Shift | null;
+  personInChargeId: number | null;
+  idDocumentType: string;
+  idDocumentNumber: string;
+  comment: string | null;
+}
+
+interface UpdateProcedurePayload {
+  documentType: string;
+  documentNumber: string | null;
+  procedureTypeId: number;
+  procedureTypeOther: string | null;
+  applicantName: string;
+  programId: number | null;
+  shift: Shift | null;
+  personInChargeId: number | null;
+  idDocumentType: string | null;
+  idDocumentNumber: string | null;
+  comment: string | null;
+}
 
 // All requests go to a relative "/api/..." path:
 //  - In dev, Vite's proxy (vite.config.ts) forwards it to the local API.
@@ -150,14 +182,15 @@ export const api = {
       put<IdentityDocumentTypeListItem>(`/identity-document-types/${id}`, data),
   },
 
-  students: {
-    list: (search?: string, onlyActive = false, limit?: number, offset?: number) =>
-      get<StudentListPage>(`/students${qs({ search, onlyActive, limit, offset })}`),
-    lookup: (dni: string) => get<StudentListItem | null>(`/students/lookup${qs({ dni })}`),
-    create: (data: { idDocumentType: string; dni: string; name: string; programId: number; shift: Shift }) =>
-      post<StudentListItem>('/students', data),
-    update: (id: number, data: { idDocumentType: string; dni: string; name: string; programId: number; shift: Shift; isActive: boolean }) =>
-      put<StudentListItem>(`/students/${id}`, data),
+  applicants: {
+    list: (type?: ApplicantType, search?: string, onlyActive = false, limit?: number, offset?: number) =>
+      get<ApplicantListPage>(`/applicants${qs({ type, search, onlyActive, limit, offset })}`),
+    lookup: (type: ApplicantType, dni: string) =>
+      get<ApplicantListItem | null>(`/applicants/lookup${qs({ type, dni })}`),
+    create: (data: { type: ApplicantType; idDocumentType: string; dni: string; name: string; programId: number | null; shift: Shift | null }) =>
+      post<ApplicantListItem>('/applicants', data),
+    update: (id: number, data: { idDocumentType: string; dni: string; name: string; programId: number | null; shift: Shift | null; isActive: boolean }) =>
+      put<ApplicantListItem>(`/applicants/${id}`, data),
   },
 
   procedures: {
@@ -173,8 +206,8 @@ export const api = {
       },
     ) => get<ProcedureListPage>(`/procedures${qs(filters)}`),
     get: (id: number) => get<ProcedureDetail>(`/procedures/${id}`),
-    create: (data: Record<string, unknown>) => post<CreateProcedureResponse>('/procedures', data),
-    update: (id: number, data: Record<string, unknown>) => put<ProcedureDetail>(`/procedures/${id}`, data),
+    create: (data: CreateProcedurePayload) => post<CreateProcedureResponse>('/procedures', data),
+    update: (id: number, data: UpdateProcedurePayload) => put<ProcedureDetail>(`/procedures/${id}`, data),
     changeStatus: (id: number, status: ProcedureStatus, comment?: string) =>
       patch<ProcedureDetail>(`/procedures/${id}/status`, { status, comment }),
     remove: (id: number) => del<void>(`/procedures/${id}`),

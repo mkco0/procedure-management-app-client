@@ -9,6 +9,7 @@ import { NewProcedureModal } from './procedures/NewProcedureModal';
 import { ProcedureDetailModal } from './procedures/ProcedureDetailModal';
 import { useCatalogs } from '../../utils/useCatalogs';
 import {
+  APPLICANT_TYPE_LABELS,
   AREA_LABELS,
   AREA_STATUSES,
   SHIFT_LABELS,
@@ -258,7 +259,7 @@ export function ProceduresListPage() {
                       <td className="px-4 py-3.5">{toTitleCase(p.applicantName)}</td>
                       <td className="px-4 py-3.5">{toTitleCase(p.procedureTypeName)}</td>
                       <td className="hidden px-4 py-3.5 print:table-cell">
-                        {p.programName} / {SHIFT_LABELS[p.shift]}
+                        {p.programName ? `${p.programName} / ${SHIFT_LABELS[p.shift!]}` : APPLICANT_TYPE_LABELS[p.applicantType]}
                       </td>
                       <td className="hidden px-4 py-3.5 print:table-cell">{p.registeredByName}</td>
                       <td className="hidden px-4 py-3.5 print:table-cell">
