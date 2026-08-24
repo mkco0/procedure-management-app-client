@@ -7,6 +7,7 @@ import type {
   Estado,
   IdentityDocumentTypeListItem,
   LoginResponse,
+  OrgUnitOption,
   PresentedDocumentTypeListItem,
   ProcedureDetail,
   ProcedureListPage,
@@ -144,10 +145,26 @@ export const api = {
     // Active staff only, readable by any signed-in user — /users itself is
     // Admin-only, but Secretaría needs this to pick a responsable.
     options: () => get<UserOption[]>('/users/options'),
-    create: (data: { name: string; dni: string; password: string; role: string }) =>
+    create: (data: { name: string; dni: string; password: string; role: string; orgUnitId: number | null }) =>
       post<UserListItem>('/users', data),
-    update: (id: number, data: { name: string; dni: string; role: string; isActive: boolean; password?: string | null }) =>
-      put<UserListItem>(`/users/${id}`, data),
+    update: (
+      id: number,
+      data: {
+        name: string;
+        dni: string;
+        role: string;
+        isActive: boolean;
+        password?: string | null;
+        orgUnitId: number | null;
+      },
+    ) => put<UserListItem>(`/users/${id}`, data),
+  },
+
+  // The institution's organigrama, flat (each node carries its parentId).
+  // Readable by any signed-in user — it's what the responsable picker
+  // cascades through.
+  orgUnits: {
+    list: () => get<OrgUnitOption[]>('/org-units'),
   },
 
   programs: {

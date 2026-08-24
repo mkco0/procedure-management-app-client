@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api, ApiError } from '../../../api/client';
 import { CopyButton, ErrorNotice, Field, Input, SearchableSelect, Select, Textarea } from '../../../components/ui';
+import { ResponsableSelect } from '../../../components/ResponsableSelect';
 import { APPLICANT_TYPE_LABELS, PROCEDURE_TYPE_OTHER_NAME, SHIFT_LABELS, type ProcedureDetail, type Shift } from '../../../types/domain';
 import type { Catalogs } from '../../../utils/useCatalogs';
 
@@ -166,16 +167,13 @@ export function ProcedureEditForm({
           />
         </Field>
       )}
-      <Field label="Responsable" hint="Personal a cargo del seguimiento.">
-        <Select value={form.personInChargeId} onChange={(e) => setForm({ ...form, personInChargeId: e.target.value })}>
-          <option value="">Sin asignar</option>
-          {catalogs.staff.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <ResponsableSelect
+        orgUnits={catalogs.orgUnits}
+        staff={catalogs.staff}
+        value={form.personInChargeId}
+        onChange={(personInChargeId) => setForm({ ...form, personInChargeId })}
+        hint="Personal a cargo del seguimiento."
+      />
 
       <div className="col-span-2 flex items-center gap-1 text-sm text-ink-soft">
         Documento de identidad actual: <span className="font-medium text-ink">{procedure.applicantDni}</span>

@@ -4,6 +4,7 @@ import { api, ApiError } from '../../../api/client';
 import { Modal } from '../../../components/Modal';
 import { Button, Card, ErrorNotice, Field, Input, SearchableSelect, Select, Textarea } from '../../../components/ui';
 import { ApplicantSearchInput } from '../../../components/ApplicantSearchInput';
+import { ResponsableSelect } from '../../../components/ResponsableSelect';
 import {
   APPLICANT_TYPE_LABELS,
   APPLICANT_TYPES,
@@ -348,16 +349,13 @@ export function NewProcedureModal({
                   />
                 </Field>
               )}
-              <Field label="Responsable" hint="Personal a cargo del seguimiento (opcional)">
-                <Select value={draft.personInChargeId} onChange={(e) => set('personInChargeId', e.target.value)}>
-                  <option value="">Sin asignar</option>
-                  {catalogs.staff.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
+              <ResponsableSelect
+                orgUnits={catalogs.orgUnits}
+                staff={catalogs.staff}
+                value={draft.personInChargeId}
+                onChange={(personInChargeId) => set('personInChargeId', personInChargeId)}
+                hint="Personal a cargo del seguimiento (opcional)"
+              />
             </div>
             <div className="mt-4">
               <Field label="(OPCIONAL) - OBSERVACIONES">

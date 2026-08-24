@@ -235,6 +235,8 @@ export interface UserListItem {
   dni: string;
   role: UserRole;
   isActive: boolean;
+  orgUnitId: number | null;
+  orgUnitName: string | null;
   createdAt: string;
 }
 
@@ -242,6 +244,53 @@ export interface UserListItem {
 export interface UserOption {
   id: number;
   name: string;
+  /** Where they sit in the organigrama; null when unassigned. */
+  orgUnitId: number | null;
+}
+
+// ---------------- Organigrama ----------------
+
+/**
+ * One box of the institution's organigrama, flattened — `parentId` is null
+ * only for the root (Dirección General). Deliberately unrelated to `Area`
+ * above: that one tracks which office holds an expediente, this one tracks
+ * who staff report under. They overlap by name but not by content (Mesa de
+ * Partes is an área no organigrama box corresponds to, and Calidad/Tópico are
+ * boxes no trámite routes through).
+ */
+export interface OrgUnitOption {
+  id: number;
+  name: string;
+  parentId: number | null;
+}
+
+/** The root box every área hangs from; also selectable as a placement itself. */
+export const ORG_ROOT_ID = 1;
+
+/**
+ * The boxes the first cascade level offers: the root plus its direct
+ * children. Everything deeper (Administración's oficinas, the carreras,
+ * Tópico) is a subárea reached through its parent.
+ */
+export function isTopLevelUnit(unit: OrgUnitOption): boolean {
+  return unit.parentId === null || unit.parentId === ORG_ROOT_ID;
+}
+
+/**
+ * Splits a stored unit id back into the (área, subárea) pair the cascade
+ * selects display — what a picker needs when it's handed a placement and has
+ * to show where in the tree it came from.
+ */
+export function splitOrgUnit(
+  unitId: number,
+  orgUnits: OrgUnitOption[],
+): { areaId: string; subAreaId: string } {
+  const unit = orgUnits.find((u) => u.id === unitId);
+  if (!unit) return { areaId: '', subAreaId: '' };
+
+  return isTopLevelUnit(unit)
+    ? { areaId: String(unit.id), subAreaId: '' }
+    : { areaId: String(unit.parentId), subAreaId: String(unit.id) };
 }
 
 // ---------------- Programs ----------------

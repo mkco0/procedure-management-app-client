@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type {
   IdentityDocumentTypeListItem,
+  OrgUnitOption,
   PresentedDocumentTypeListItem,
   ProcedureTypeListItem,
   ProgramListItem,
@@ -14,6 +15,7 @@ export interface Catalogs {
   presentedDocumentTypes: PresentedDocumentTypeListItem[];
   identityDocumentTypes: IdentityDocumentTypeListItem[];
   staff: UserOption[];
+  orgUnits: OrgUnitOption[];
   loading: boolean;
 }
 
@@ -25,6 +27,7 @@ export function useCatalogs(): Catalogs {
     presentedDocumentTypes: [],
     identityDocumentTypes: [],
     staff: [],
+    orgUnits: [],
     loading: true,
   });
 
@@ -37,7 +40,8 @@ export function useCatalogs(): Catalogs {
       api.presentedDocumentTypes.list(true),
       api.identityDocumentTypes.list(true),
       api.users.options(),
-    ]).then(([programs, procedureTypes, presentedDocumentTypes, identityDocumentTypes, staff]) => {
+      api.orgUnits.list(),
+    ]).then(([programs, procedureTypes, presentedDocumentTypes, identityDocumentTypes, staff, orgUnits]) => {
       if (cancelled) return;
       setState({
         programs,
@@ -45,6 +49,7 @@ export function useCatalogs(): Catalogs {
         presentedDocumentTypes,
         identityDocumentTypes,
         staff,
+        orgUnits,
         loading: false,
       });
     });

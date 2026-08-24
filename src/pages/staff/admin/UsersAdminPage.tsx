@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api, ApiError } from '../../../api/client';
 import { Button, Card, Checkbox, ErrorNotice, Field, Input, PageHeader, Select } from '../../../components/ui';
-import { ROLE_LABELS, type UserListItem, type UserRole } from '../../../types/domain';
+import { OrgUnitSelect } from '../../../components/OrgUnitSelect';
+import { ROLE_LABELS, type OrgUnitOption, type UserListItem, type UserRole } from '../../../types/domain';
 
 interface FormState {
   id: number | null;
@@ -10,12 +11,23 @@ interface FormState {
   password: string;
   role: UserRole;
   isActive: boolean;
+  /** Organigrama placement, as a string id; '' means unassigned. */
+  orgUnitId: string;
 }
 
-const emptyForm: FormState = { id: null, name: '', dni: '', password: '', role: 'Secretary', isActive: true };
+const emptyForm: FormState = {
+  id: null,
+  name: '',
+  dni: '',
+  password: '',
+  role: 'Secretary',
+  isActive: true,
+  orgUnitId: '',
+};
 
 export function UsersAdminPage() {
   const [users, setUsers] = useState<UserListItem[]>([]);
+  const [orgUnits, setOrgUnits] = useState<OrgUnitOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<FormState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -28,8 +40,20 @@ export function UsersAdminPage() {
 
   useEffect(load, []);
 
+  useEffect(() => {
+    api.orgUnits.list().then(setOrgUnits);
+  }, []);
+
   function startEdit(u: UserListItem) {
-    setForm({ id: u.id, name: u.name, dni: u.dni, password: '', role: u.role, isActive: u.isActive });
+    setForm({
+      id: u.id,
+      name: u.name,
+      dni: u.dni,
+      password: '',
+      role: u.role,
+      isActive: u.isActive,
+      orgUnitId: u.orgUnitId !== null ? String(u.orgUnitId) : '',
+    });
     setError(null);
   }
 
@@ -39,8 +63,15 @@ export function UsersAdminPage() {
     setSaving(true);
     setError(null);
     try {
+      const orgUnitId = form.orgUnitId ? Number(form.orgUnitId) : null;
       if (form.id === null) {
-        await api.users.create({ name: form.name, dni: form.dni, password: form.password, role: form.role });
+        await api.users.create({
+          name: form.name,
+          dni: form.dni,
+          password: form.password,
+          role: form.role,
+          orgUnitId,
+        });
       } else {
         await api.users.update(form.id, {
           name: form.name,
@@ -48,6 +79,7 @@ export function UsersAdminPage() {
           role: form.role,
           isActive: form.isActive,
           password: form.password || null,
+          orgUnitId,
         });
       }
       setForm(null);
@@ -101,6 +133,11 @@ export function UsersAdminPage() {
                 ))}
               </Select>
             </Field>
+            <OrgUnitSelect
+              orgUnits={orgUnits}
+              value={form.orgUnitId}
+              onChange={(orgUnitId) => setForm({ ...form, orgUnitId })}
+            />
             {form.id !== null && (
               <div className="flex items-end">
                 <Checkbox
@@ -136,6 +173,7 @@ export function UsersAdminPage() {
               <tr className="bg-navy-100 text-xs uppercase tracking-wide text-navy-900">
                 <th className="px-3 py-2 font-medium">DNI</th>
                 <th className="px-3 py-2 font-medium">Nombre</th>
+                <th className="px-3 py-2 font-medium">Área</th>
                 <th className="px-3 py-2 font-medium">Rol</th>
                 <th className="px-3 py-2 font-medium">Estado</th>
                 <th className="px-3 py-2 font-medium"></th>
@@ -146,6 +184,9 @@ export function UsersAdminPage() {
                 <tr key={u.id} className="hover:bg-navy-100/40">
                   <td className="px-3 py-2">{u.dni}</td>
                   <td className="px-3 py-2">{u.name}</td>
+                  <td className="px-3 py-2">
+                    {u.orgUnitName ?? <span className="text-ink-soft">Sin asignar</span>}
+                  </td>
                   <td className="px-3 py-2">{ROLE_LABELS[u.role]}</td>
                   <td className="px-3 py-2">{u.isActive ? 'Activo' : 'Inactivo'}</td>
                   <td className="px-3 py-2 text-right">
