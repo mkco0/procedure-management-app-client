@@ -75,7 +75,8 @@ export function TramiteStatusPage() {
       </h1>
       <p className="mt-1 text-sm text-ink-soft">
         Nombres: {result.applicantName} <br/>
-        {result.programCode && <>Carrera: {result.programCode} <br/></>}
+        {result.programName && <>Carrera: {result.programName} <br/></>}
+        Responsable actual: {result.personInChargeName ?? 'Sin asignar'} <br/>
         Registrado en: {formatDateTime(result.registeredAt)}
       </p>
       <div className="mt-3 flex items-center gap-2">

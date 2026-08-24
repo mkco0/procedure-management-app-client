@@ -397,6 +397,7 @@ export interface PublicProcedureResult {
   procedureTypeName: string;
   programCode: string | null;
   programName: string | null;
+  personInChargeName: string | null;
   status: ProcedureStatus;
   resumeStage: ProcedureStatus | null;
   registeredAt: string;
